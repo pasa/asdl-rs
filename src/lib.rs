@@ -1,14 +1,17 @@
 use std::fmt::Write;
 
-use rowan::SmolStr;
-use rowan::SyntaxKind;
-use rowan::GreenNode;
-use rowan::GreenNodeBuilder;
-use rowan::SyntaxNode;
-use rowan::TreeArc;
-use rowan::TransparentNewType;
-use rowan::WalkEvent;
-use rowan::SyntaxElement;
+use rowan:: {
+    SmolStr,
+    SyntaxKind,
+    GreenNode,
+    GreenNodeBuilder,
+    SyntaxElement,
+    SyntaxNode,
+    SyntaxToken,
+    TreeArc,
+    TransparentNewType,
+    WalkEvent,
+};
 
 const L_PAREN: SyntaxKind = SyntaxKind(0); // '('
 const R_PAREN: SyntaxKind = SyntaxKind(1); // ')'
@@ -59,16 +62,49 @@ macro_rules! ast_node {
     };
 }
 
+macro_rules! ast_token {
+    ($ast:ident, $kind:ident) => {
+        #[derive(PartialEq, Eq, Hash, Debug)]
+        #[repr(transparent)]
+        struct $ast<'a>(SyntaxToken<'a>);
+        unsafe impl<'a> TransparentNewType for $ast<'a> {
+            type Repr = SyntaxToken<'a>;
+        }
+        impl<'a> $ast<'a> {
+            #[allow(unused)]
+            fn cast(node: SyntaxToken<'a>) -> Option<Self> {
+                if node.kind() == $kind.into() {
+                    Some($ast(node))
+                } else {
+                    None
+                }
+            }
+            #[allow(unused)]
+            fn cast_elem(elem: SyntaxElement<'a>) -> Option<Self> {
+                match elem {
+                    SyntaxElement::Token(t) => $ast::cast(t),
+                    _ => None,
+                }
+            }
+
+            fn text(&self) -> &'a SmolStr {
+                self.0.text()
+            }
+        }
+    };
+}
+
 ast_node!(Root, ROOT);
 ast_node!(Def, DEF);
-ast_node!(TypeId, TYPE_ID);
-ast_node!(ConstrId, CONSTR_ID);
-ast_node!(Id, ID);
 ast_node!(SumType, SUM_TYPE);
 ast_node!(ProdType, PROD_TYPE);
 ast_node!(Constr, CONSTR);
-ast_node!(Fileds, FIELDS);
-ast_node!(Filed, FIELD);
+ast_node!(Fields, FIELDS);
+ast_node!(Field, FIELD);
+
+ast_token!(TypeId, TYPE_ID);
+ast_token!(ConstrId, CONSTR_ID);
+ast_token!(Id, ID);
 
 #[derive(Debug)]
 struct Type(SyntaxNode);
@@ -96,6 +132,9 @@ impl Type {
 }
 
 impl Root {
+    fn defs(&self) -> impl Iterator<Item = &Def> {
+        self.0.children().filter_map(Def::cast)
+    }
 
     pub fn preorder_with_tokens(&self) -> impl Iterator<Item = WalkEvent<SyntaxElement>> {
         self.0.preorder_with_tokens().map(|event| match event {
@@ -134,6 +173,54 @@ impl Root {
 
         assert_eq!(level, 0);
         buf
+    }
+}
+
+impl Def {
+    fn type_id(&self) -> TypeId {
+        self.0.children_with_tokens().find_map(TypeId::cast_elem).unwrap()
+    }
+
+    fn ty(&self) -> &Type {
+        self.0.children().find_map(Type::cast).unwrap()
+    }
+}
+
+impl SumType {
+    fn constructors(&self) -> impl Iterator<Item = &Constr> {
+        self.0.children().filter_map(Constr::cast)
+    }
+}
+
+impl Constr {
+    fn id(&self) -> ConstrId {
+        self.0.children_with_tokens().find_map(ConstrId::cast_elem).unwrap()
+    }
+
+    fn fields(&self) -> Option<&Fields> {
+        self.0.children().find_map(Fields::cast)
+    }
+}
+
+impl ProdType {
+    fn fields(&self) -> &Fields {
+        self.0.children().find_map(Fields::cast).unwrap()
+    }
+}
+
+impl Fields {
+    fn fields(&self) -> impl Iterator<Item = &Field> {
+        self.0.children().filter_map(Field::cast)
+    }
+}
+
+impl Field {
+    fn type_id(&self) -> TypeId {
+        self.0.children_with_tokens().find_map(TypeId::cast_elem).unwrap()
+    }
+
+    fn id(&self) -> Option<Id> {
+        self.0.children_with_tokens().find_map(Id::cast_elem)
     }
 }
 
@@ -179,7 +266,7 @@ impl Parser {
         };
         match t {
             TYPE_ID => {
-                self.builder.start_node(DEF.into());
+                self.builder.start_node(DEF);
                 self.bump();
                 self.skip_ws();
                 match self.current() {
@@ -297,10 +384,8 @@ impl Parser {
             Some(t) => t,
         };
         match t {
-            TYPE_ID | CONSTR => {
-                self.builder.start_node(ID.into());
-                self.bump();
-                self.builder.finish_node();
+            TYPE_ID | CONSTR_ID => {
+                self.bump_replace(ID);
             }
             _ => (),
         }
@@ -315,9 +400,14 @@ impl Parser {
 
     fn bump(&mut self) {
         let (kind, text) = self.tokens.pop().unwrap();
-        // println!("Bumped {:?}", text);
-        self.builder.token(kind.into(), text);
+        self.builder.token(kind, text);
     }
+
+    fn bump_replace(&mut self, new_kind: SyntaxKind) {
+        let (_, text) = self.tokens.pop().unwrap();
+        self.builder.token(new_kind, text);
+    }
+
     fn current(&self) -> Option<SyntaxKind> {
         self.tokens.last().map(|(kind, _)| *kind)
     }
@@ -379,20 +469,134 @@ fn parse(text: &str) -> TreeArc<Root> {
     Parser { tokens, builder: GreenNodeBuilder::new(), errors: Vec::new() }.parse()
 }
 
+mod model {
+
+    use std::convert::From;
+    use rustc_hash::FxHashMap;
+    use std::fmt::Write;
+
+    use serde::{
+        Serialize,
+        Deserialize,
+};
+
+    use crate:: {
+        Root,
+        TypeKind::*
+};
+
+    #[derive(Serialize, Debug)]
+    pub(crate) struct Types {
+        prod_types: Vec<ProdType>,
+        sum_types: Vec<SumType>,
+    }
+
+    #[derive(Serialize, Debug)]
+    pub(crate) struct ProdType {
+        id: String,
+        fields: Vec<Field>,
+    }
+
+    #[derive(Serialize, Debug)]
+    pub(crate) struct SumType {
+        id: String,
+        constructors: Vec<Constructor>,
+    }
+
+    #[derive(Serialize, Debug)]
+    pub(crate) struct Constructor {
+        id: String,
+        fields: Vec<Field>,
+    }
+
+    #[derive(Serialize, Debug)]
+    pub(crate) struct Field {
+        id: String,
+        type_id: String,
+    }
+
+    #[derive(Serialize, Debug)]
+    pub(crate) enum FiledType {
+        Single,
+        Opt,
+        Collection,
+    }
+
+    impl From<&Root> for Types {
+        fn from(root: &Root) -> Self {
+            let mut res = Types { prod_types: vec![], sum_types: vec![] };
+            for d in root.defs() {
+                let type_id = d.type_id().text().to_string();
+                match d.ty().kind() {
+                    Sum(t) => {
+                        res.sum_types.push(sum_type(type_id, t));
+                    }
+                    Prod(t) => {
+                        res.prod_types.push(prod_type(type_id, t));
+                    }
+                }
+            }
+
+            res
+        }
+    }
+
+    fn sum_type(id: String, node: &crate::SumType) -> SumType {
+        let constructors = node.constructors().map(constructor).collect();
+        SumType { id, constructors }
+    }
+
+    fn constructor(node: &crate::Constr) -> Constructor {
+        let id = node.id().text().to_string();
+        let fields = match node.fields() {
+            Option::Some(fs) => fields(fs),
+            Option::None => vec![],
+        };
+        Constructor { id, fields }
+    }
+
+    fn fields(fields: &crate::Fields) -> Vec<Field> {
+        let mut names = FieldNames::default();
+        fields.fields().map(|f| field(f, &mut names)).collect()
+    }
+
+    fn field(node: &crate::Field, names: &mut FieldNames) -> Field {
+        let type_id = node.type_id().text().to_string();
+        let id = names.get_or_generate(node);
+        Field { type_id, id }
+    }
+
+    fn prod_type(type_id: String, node: &crate::ProdType) -> ProdType {
+        ProdType { id: type_id, fields: fields(node.fields()) }
+    }
+
+    #[derive(Default)]
+    struct FieldNames {
+        names_indexes: FxHashMap<String, u32>,
+    }
+
+    impl FieldNames {
+        fn get_or_generate(&mut self, f: &crate::Field) -> String {
+            match f.id() {
+                Option::Some(id) => id.text().to_string(),
+                Option::None => {
+                    let type_id = f.type_id().text();
+                    let index = self.names_indexes.entry(type_id.to_string()).or_insert(0);
+                    *index += 1;
+                    let mut output = String::new();
+                    write!(&mut output, "{}{}", type_id, index).unwrap();
+                    output
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::*;
+    use crate::model::*;
     use insta::assert_snapshot_matches;
-
-    #[test]
-    fn test_lexer() {
-        let asdl = r"
-            stm = Compound(stm s1, stm s2)
-                | Single(stm)
-            ";
-        let res = lex(asdl);
-        println!("{:#?}", res)
-    }
 
     #[test]
     fn test_parse() {
@@ -404,5 +608,18 @@ mod tests {
             ";
         let res = parse(asdl);
         assert_snapshot_matches!("test_parse", res.debug_dump());
+    }
+
+    #[test]
+    fn test_model() {
+        let asdl = r"
+            stm = Compound(stm s1, stm s2)
+                | Single(stm)
+            noFileds = One | Two| Tree
+            prodType = (noFileds f, stm s1)
+            ";
+        let root: &Root = &parse(asdl);
+        let model = Types::from(root);
+        println!("{:#?}", model)
     }
 }

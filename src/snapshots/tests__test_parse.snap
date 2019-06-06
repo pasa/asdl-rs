@@ -1,5 +1,5 @@
 ---
-created: "2019-05-28T13:54:23.256472907Z"
+created: "2019-06-04T15:16:51.597004596Z"
 creator: insta@0.8.1
 source: src/lib.rs
 expression: res.debug_dump()
@@ -20,14 +20,12 @@ SyntaxKind(21)@[0; 169)
             SyntaxKind(6)@[28; 31)
             SyntaxKind(8)@[31; 32)
             SyntaxKind(28)@[32; 34)
-              SyntaxKind(6)@[32; 34)
           SyntaxKind(5)@[34; 35)
           SyntaxKind(8)@[35; 36)
           SyntaxKind(27)@[36; 42)
             SyntaxKind(6)@[36; 39)
             SyntaxKind(8)@[39; 40)
             SyntaxKind(28)@[40; 42)
-              SyntaxKind(6)@[40; 42)
           SyntaxKind(1)@[42; 43)
       SyntaxKind(8)@[43; 60)
       SyntaxKind(2)@[60; 61)
@@ -70,14 +68,12 @@ SyntaxKind(21)@[0; 169)
           SyntaxKind(6)@[137; 145)
           SyntaxKind(8)@[145; 146)
           SyntaxKind(28)@[146; 147)
-            SyntaxKind(6)@[146; 147)
         SyntaxKind(5)@[147; 148)
         SyntaxKind(8)@[148; 149)
         SyntaxKind(27)@[149; 155)
           SyntaxKind(6)@[149; 152)
           SyntaxKind(8)@[152; 153)
           SyntaxKind(28)@[153; 155)
-            SyntaxKind(6)@[153; 155)
         SyntaxKind(1)@[155; 156)
   SyntaxKind(8)@[156; 169)
 
