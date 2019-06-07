@@ -1,0 +1,131 @@
+---
+created: "2019-06-07T15:34:02.808670498Z"
+creator: insta@0.8.1
+source: src/lib.rs
+expression: model
+---
+Types {
+    prod_types: [],
+    sum_types: [
+        SumType {
+            id: "type",
+            constructors: [
+                Constructor {
+                    id: "Sum",
+                    fields: [
+                        Field {
+                            id: "identifier1",
+                            type_id: "identifier",
+                            ty: Single
+                        },
+                        Field {
+                            id: "field1",
+                            type_id: "field",
+                            ty: Collection
+                        },
+                        Field {
+                            id: "constructor1",
+                            type_id: "constructor",
+                            ty: Single
+                        },
+                        Field {
+                            id: "constructor2",
+                            type_id: "constructor",
+                            ty: Collection
+                        }
+                    ]
+                },
+                Constructor {
+                    id: "Product",
+                    fields: [
+                        Field {
+                            id: "identifier1",
+                            type_id: "identifier",
+                            ty: Single
+                        },
+                        Field {
+                            id: "field1",
+                            type_id: "field",
+                            ty: Single
+                        },
+                        Field {
+                            id: "field2",
+                            type_id: "field",
+                            ty: Collection
+                        }
+                    ]
+                }
+            ]
+        },
+        SumType {
+            id: "constructor",
+            constructors: [
+                Constructor {
+                    id: "Con",
+                    fields: [
+                        Field {
+                            id: "identifier1",
+                            type_id: "identifier",
+                            ty: Single
+                        },
+                        Field {
+                            id: "field1",
+                            type_id: "field",
+                            ty: Collection
+                        }
+                    ]
+                }
+            ]
+        },
+        SumType {
+            id: "field",
+            constructors: [
+                Constructor {
+                    id: "Id",
+                    fields: [
+                        Field {
+                            id: "identifier1",
+                            type_id: "identifier",
+                            ty: Single
+                        },
+                        Field {
+                            id: "identifier2",
+                            type_id: "identifier",
+                            ty: Option
+                        }
+                    ]
+                },
+                Constructor {
+                    id: "Option",
+                    fields: [
+                        Field {
+                            id: "identifier1",
+                            type_id: "identifier",
+                            ty: Single
+                        },
+                        Field {
+                            id: "identifier2",
+                            type_id: "identifier",
+                            ty: Option
+                        }
+                    ]
+                },
+                Constructor {
+                    id: "Sequence",
+                    fields: [
+                        Field {
+                            id: "identifier1",
+                            type_id: "identifier",
+                            ty: Single
+                        },
+                        Field {
+                            id: "identifier2",
+                            type_id: "identifier",
+                            ty: Option
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

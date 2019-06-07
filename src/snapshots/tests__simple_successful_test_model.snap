@@ -1,0 +1,74 @@
+---
+created: "2019-06-07T15:09:08.177886292Z"
+creator: insta@0.8.1
+source: src/lib.rs
+expression: model
+---
+Types {
+    prod_types: [
+        ProdType {
+            id: "prodType",
+            fields: [
+                Field {
+                    id: "f",
+                    type_id: "noFileds",
+                    ty: Option
+                },
+                Field {
+                    id: "s1",
+                    type_id: "stm",
+                    ty: Single
+                }
+            ]
+        }
+    ],
+    sum_types: [
+        SumType {
+            id: "stm",
+            constructors: [
+                Constructor {
+                    id: "Compound",
+                    fields: [
+                        Field {
+                            id: "s1",
+                            type_id: "stm",
+                            ty: Single
+                        },
+                        Field {
+                            id: "s2",
+                            type_id: "stm",
+                            ty: Collection
+                        }
+                    ]
+                },
+                Constructor {
+                    id: "Single",
+                    fields: [
+                        Field {
+                            id: "stm1",
+                            type_id: "stm",
+                            ty: Single
+                        }
+                    ]
+                }
+            ]
+        },
+        SumType {
+            id: "noFileds",
+            constructors: [
+                Constructor {
+                    id: "One",
+                    fields: []
+                },
+                Constructor {
+                    id: "Two",
+                    fields: []
+                },
+                Constructor {
+                    id: "Tree",
+                    fields: []
+                }
+            ]
+        }
+    ]
+}

@@ -87,6 +87,7 @@ macro_rules! ast_token {
                 }
             }
 
+            #[allow(unused)]
             fn text(&self) -> &'a SmolStr {
                 self.0.text()
             }
@@ -105,6 +106,8 @@ ast_node!(Field, FIELD);
 ast_token!(TypeId, TYPE_ID);
 ast_token!(ConstrId, CONSTR_ID);
 ast_token!(Id, ID);
+ast_token!(Star, STAR);
+ast_token!(QMark, Q_MARK);
 
 #[derive(Debug)]
 struct Type(SyntaxNode);
@@ -162,7 +165,7 @@ impl Root {
                         SyntaxElement::Node(node) => writeln!(buf, "{:?}", node).unwrap(),
                         SyntaxElement::Token(token) => {
                             writeln!(buf, "{:?}", token).unwrap();
-                            let off = token.range().end();
+                            let _off = token.range().end();
                         }
                     }
                     level += 1;
@@ -221,6 +224,14 @@ impl Field {
 
     fn id(&self) -> Option<Id> {
         self.0.children_with_tokens().find_map(Id::cast_elem)
+    }
+
+    fn star(&self) -> Option<Star> {
+        self.0.children_with_tokens().find_map(Star::cast_elem)
+    }
+
+    fn q_mark(&self) -> Option<QMark> {
+        self.0.children_with_tokens().find_map(QMark::cast_elem)
     }
 }
 
@@ -371,8 +382,25 @@ impl Parser {
         if let Some(TYPE_ID) = self.current() {
             self.builder.start_node(FIELD.into());
             self.bump();
+            self.start_or_qmark();
             self.id();
             self.builder.finish_node();
+            ParseStatus::Ok
+        } else {
+            ParseStatus::Eof
+        }
+    }
+
+    fn start_or_qmark(&mut self)  -> ParseStatus {
+        let t = match self.current() {
+            None => return ParseStatus::Eof,
+            Some(t) => t,
+        };
+        match t {
+            STAR | Q_MARK => {
+                self.bump();
+            }
+            _ => (),
         }
         ParseStatus::Ok
     }
@@ -477,7 +505,6 @@ mod model {
 
     use serde::{
         Serialize,
-        Deserialize,
 };
 
     use crate:: {
@@ -513,12 +540,13 @@ mod model {
     pub(crate) struct Field {
         id: String,
         type_id: String,
+        ty: FieldType,
     }
 
     #[derive(Serialize, Debug)]
-    pub(crate) enum FiledType {
+    pub(crate) enum FieldType {
         Single,
-        Opt,
+        Option,
         Collection,
     }
 
@@ -563,7 +591,14 @@ mod model {
     fn field(node: &crate::Field, names: &mut FieldNames) -> Field {
         let type_id = node.type_id().text().to_string();
         let id = names.get_or_generate(node);
-        Field { type_id, id }
+        let ty = if node.star().is_some() {
+            FieldType::Collection
+        } else if node.q_mark().is_some() {
+            FieldType::Option
+        } else {
+            FieldType::Single
+        };
+        Field { type_id, id, ty }
     }
 
     fn prod_type(type_id: String, node: &crate::ProdType) -> ProdType {
@@ -597,29 +632,36 @@ mod tests {
     use crate::*;
     use crate::model::*;
     use insta::assert_snapshot_matches;
+    use insta::assert_debug_snapshot_matches;
 
     #[test]
-    fn test_parse() {
+    fn simple_successful_test() {
         let asdl = r"
-            stm = Compound(stm s1, stm s2)
+            stm = Compound(stm s1, stm* s2)
                 | Single(stm)
             noFileds = One | Two| Tree
-            prodType = (noFileds f, stm s1)
+            prodType = (noFileds? f, stm s1)
             ";
-        let res = parse(asdl);
-        assert_snapshot_matches!("test_parse", res.debug_dump());
+        let root : &Root = &parse(asdl);
+        let model = Types::from(root);
+        assert_snapshot_matches!("simple_successful_test_syntax", root.debug_dump());
+        assert_debug_snapshot_matches!("simple_successful_test_model", model)
     }
 
-    #[test]
-    fn test_model() {
-        let asdl = r"
-            stm = Compound(stm s1, stm s2)
-                | Single(stm)
-            noFileds = One | Two| Tree
-            prodType = (noFileds f, stm s1)
+     #[test]
+    fn test_asdl_definition() {
+        let asdl = r"   type = Sum(identifier, field*, constructor, constructor*)
+                            | Product(identifier, field, field*)
+
+                        constructor = Con(identifier, field*)
+
+                        field = Id(identifier, identifier?)
+                            | Option(identifier, identifier?)
+                            | Sequence(identifier, identifier?)
             ";
-        let root: &Root = &parse(asdl);
+        let root : &Root = &parse(asdl);
         let model = Types::from(root);
-        println!("{:#?}", model)
+        assert_snapshot_matches!("test_asdl_definition_syntax", root.debug_dump());
+        assert_debug_snapshot_matches!("test_asdl_definition_model", model)
     }
 }
