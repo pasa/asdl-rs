@@ -1,0 +1,20 @@
+{% for ty in prod_types %}
+struct {{ty.id | camel}}(SyntaxNode) {
+    {% for f in ty.fields -%}
+    {% if f.is_option %}
+    fn {{f.id | snake}}(&self) -> Option<&{{f.type_id | camel}}> {
+        self.0.children().find_map({{f.type_id | camel}}::cast)
+    }
+    {{f.id | snake}}: Option<{{f.type_id | camel}}>
+    {% elif f.is_sequence %}
+    fn {{f.id | snake}}(&self) -> impl Iterator<Item = &{{f.type_id | camel}}> {
+        self.0.children().filter_map({{f.type_id | camel}}::cast)
+    }
+    {% else %}
+    fn {{f.id | snake}}(&self) -> &{{f.type_id | camel}} {
+        self.0.children().find_map({{f.type_id | camel}}::cast).unwrap()
+    }
+    {% endif %}
+    {% endfor %}
+}
+{% endfor %}

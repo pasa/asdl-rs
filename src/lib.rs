@@ -13,6 +13,11 @@ use rowan:: {
     WalkEvent,
 };
 
+use tera::*;
+use crate::model::*;
+use failure::format_err;
+use heck::{CamelCase, ShoutySnakeCase, SnakeCase};
+
 const L_PAREN: SyntaxKind = SyntaxKind(0); // '('
 const R_PAREN: SyntaxKind = SyntaxKind(1); // ')'
 const PIPE: SyntaxKind = SyntaxKind(2); // '|'
@@ -391,7 +396,7 @@ impl Parser {
         }
     }
 
-    fn start_or_qmark(&mut self)  -> ParseStatus {
+    fn start_or_qmark(&mut self) -> ParseStatus {
         let t = match self.current() {
             None => return ParseStatus::Eof,
             Some(t) => t,
@@ -497,6 +502,20 @@ fn parse(text: &str) -> TreeArc<Root> {
     Parser { tokens, builder: GreenNodeBuilder::new(), errors: Vec::new() }.parse()
 }
 
+pub fn generate(asdl: &str, template: &str) -> String {
+    let root: &Root = &parse(&asdl);
+    let model = Asdl::from(root);
+    let mut tera = Tera::default();
+    tera.register_filter("camel", |arg, _| Ok(arg.as_str().unwrap().to_camel_case().into()));
+    tera.register_filter("snake", |arg, _| Ok(arg.as_str().unwrap().to_snake_case().into()));
+    tera.add_raw_template("_src", &template)
+        .map_err(|e| format_err!("template parsing error: {:?}", e))
+        .unwrap();
+    tera.render("_src", &model)
+        .map_err(|e| format_err!("template rendering error: {:?}", e))
+        .unwrap()
+}
+
 mod model {
 
     use std::convert::From;
@@ -513,7 +532,7 @@ mod model {
 };
 
     #[derive(Serialize, Debug)]
-    pub(crate) struct Types {
+    pub(crate) struct Asdl {
         prod_types: Vec<ProdType>,
         sum_types: Vec<SumType>,
     }
@@ -540,19 +559,28 @@ mod model {
     pub(crate) struct Field {
         id: String,
         type_id: String,
-        ty: FieldType,
+        is_single: bool,
+        is_option: bool,
+        is_sequence: bool,
     }
 
-    #[derive(Serialize, Debug)]
-    pub(crate) enum FieldType {
-        Single,
-        Option,
-        Collection,
+    impl Field {
+        fn single(id: String, type_id: String) -> Field {
+            Field{ id, type_id, is_single: true, is_option: false, is_sequence: false}
+        }
+
+        fn option(id: String, type_id: String) -> Field {
+            Field{ id, type_id, is_single: false, is_option: true, is_sequence: false}
+        }
+
+        fn sequence(id: String, type_id: String) -> Field {
+            Field{ id, type_id, is_single: false, is_option: false, is_sequence: true}
+        }
     }
 
-    impl From<&Root> for Types {
+    impl From<&Root> for Asdl {
         fn from(root: &Root) -> Self {
-            let mut res = Types { prod_types: vec![], sum_types: vec![] };
+            let mut res = Asdl { prod_types: vec![], sum_types: vec![] };
             for d in root.defs() {
                 let type_id = d.type_id().text().to_string();
                 match d.ty().kind() {
@@ -591,14 +619,13 @@ mod model {
     fn field(node: &crate::Field, names: &mut FieldNames) -> Field {
         let type_id = node.type_id().text().to_string();
         let id = names.get_or_generate(node);
-        let ty = if node.star().is_some() {
-            FieldType::Collection
+        if node.star().is_some() {
+            Field::sequence(id, type_id)
         } else if node.q_mark().is_some() {
-            FieldType::Option
+            Field::option(id, type_id)
         } else {
-            FieldType::Single
-        };
-        Field { type_id, id, ty }
+            Field::option(id, type_id)
+        }
     }
 
     fn prod_type(type_id: String, node: &crate::ProdType) -> ProdType {
@@ -630,9 +657,9 @@ mod model {
 #[cfg(test)]
 mod tests {
     use crate::*;
-    use crate::model::*;
     use insta::assert_snapshot_matches;
     use insta::assert_debug_snapshot_matches;
+    use std::fs;
 
     #[test]
     fn simple_successful_test() {
@@ -642,26 +669,18 @@ mod tests {
             noFileds = One | Two| Tree
             prodType = (noFileds? f, stm s1)
             ";
-        let root : &Root = &parse(asdl);
-        let model = Types::from(root);
+        let root: &Root = &parse(asdl);
+        let model = Asdl::from(root);
         assert_snapshot_matches!("simple_successful_test_syntax", root.debug_dump());
         assert_debug_snapshot_matches!("simple_successful_test_model", model)
     }
 
-     #[test]
-    fn test_asdl_definition() {
-        let asdl = r"   type = Sum(identifier, field*, constructor, constructor*)
-                            | Product(identifier, field, field*)
-
-                        constructor = Con(identifier, field*)
-
-                        field = Id(identifier, identifier?)
-                            | Option(identifier, identifier?)
-                            | Sequence(identifier, identifier?)
-            ";
-        let root : &Root = &parse(asdl);
-        let model = Types::from(root);
-        assert_snapshot_matches!("test_asdl_definition_syntax", root.debug_dump());
-        assert_debug_snapshot_matches!("test_asdl_definition_model", model)
+    #[test]
+    fn generate_parser_structs() {
+        let asdl = fs::read_to_string("src/parser/parser.asdl").unwrap();
+        let template = fs::read_to_string("src/parser/generated.rs.tera").unwrap();
+        let res = crate::generate(&asdl, &template);
+        println!("{}", res);
     }
+
 }

@@ -1,10 +1,10 @@
 ---
-created: "2019-06-07T15:09:08.177886292Z"
+created: "2019-06-17T09:33:35.250671462Z"
 creator: insta@0.8.1
 source: src/lib.rs
 expression: model
 ---
-Types {
+Asdl {
     prod_types: [
         ProdType {
             id: "prodType",
@@ -12,12 +12,16 @@ Types {
                 Field {
                     id: "f",
                     type_id: "noFileds",
-                    ty: Option
+                    is_single: false,
+                    is_option: true,
+                    is_sequence: false
                 },
                 Field {
                     id: "s1",
                     type_id: "stm",
-                    ty: Single
+                    is_single: false,
+                    is_option: true,
+                    is_sequence: false
                 }
             ]
         }
@@ -32,12 +36,16 @@ Types {
                         Field {
                             id: "s1",
                             type_id: "stm",
-                            ty: Single
+                            is_single: false,
+                            is_option: true,
+                            is_sequence: false
                         },
                         Field {
                             id: "s2",
                             type_id: "stm",
-                            ty: Collection
+                            is_single: false,
+                            is_option: false,
+                            is_sequence: true
                         }
                     ]
                 },
@@ -47,7 +55,9 @@ Types {
                         Field {
                             id: "stm1",
                             type_id: "stm",
-                            ty: Single
+                            is_single: false,
+                            is_option: true,
+                            is_sequence: false
                         }
                     ]
                 }
