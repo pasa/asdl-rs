@@ -1,4 +1,55 @@
+{% for ty in sum_types %}
+{%- set typeName = ty.id | camel -%}
+#[derive(Debug)]
+#[repr(transparent)]
+struct {{typeName}}(SyntaxNode);
+
+unsafe impl TransparentNewType for {{ typeName }} {
+    type Repr = rowan::SyntaxNode;
+}
+
+enum {{ typeName }}Kind<'a> {
+{% for c in ty.constructors %}
+    {{c.id | camel }}(&'a {{ c.prod_type.id | camel }}),
+{% endfor %}
+}
+
+{% for c in ty.constructors %}
+impl<'a> From<&'a {{c.id | camel }}> for &'a {{ typeName }} {
+    fn from(n: &'a {{c.id | camel }}) -> &'a {{ typeName }} {
+        {{ typeName }}::cast(&n.syntax).unwrap()
+    }
+}
+{% endfor %}
+
+impl {{ typeName }} {
+    fn cast(syntax: &SyntaxNode) -> Option<&Self> {
+        match syntax.kind() {
+            {%- for c in ty.constructors %}
+            | {{ c.prod_type.id | SCREAM }}
+            {%- endfor %} => Some({{ typeName }}::from_repr(syntax.into_repr())),
+            _ => None,
+        }
+    }
+
+    pub fn kind(&self) -> {{ typeName }}Kind {
+        match self.0.kind() {
+            {%- for c in ty.constructors %}
+            {{ c.prod_type.id | SCREAM }} => {{ typeName }}Kind::{{c.id | camel }}({{ c.prod_type.id | camel }}::cast(&self.syntax).unwrap()),
+            {%- endfor %}
+            _ => unreachable!(),
+        }
+    }
+
+    fn to_owned(&self) -> TreeArc<Self> {
+        TreeArc::cast(self.0.to_owned())
+    }
+}
+{% endfor %}
+
 {% for ty in prod_types %}
+#[derive(PartialEq, Eq, Hash, Debug)]
+#[repr(transparent)]
 struct {{ty.id | camel}}(SyntaxNode) {
     {% for f in ty.fields -%}
     {% if f.is_option %}

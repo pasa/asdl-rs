@@ -1,10 +1,80 @@
 ---
-created: "2019-06-17T09:33:35.250671462Z"
+created: "2019-06-17T11:47:23.384116309Z"
 creator: insta@0.8.1
 source: src/lib.rs
 expression: model
 ---
 Asdl {
+    sum_types: [
+        SumType {
+            id: "stm",
+            constructors: [
+                Constructor {
+                    id: "Compound",
+                    prod_type: ProdType {
+                        id: "compound",
+                        fields: [
+                            Field {
+                                id: "s1",
+                                type_id: "stm",
+                                is_single: true,
+                                is_option: false,
+                                is_sequence: false
+                            },
+                            Field {
+                                id: "s2",
+                                type_id: "stm",
+                                is_single: false,
+                                is_option: false,
+                                is_sequence: true
+                            }
+                        ]
+                    }
+                },
+                Constructor {
+                    id: "Single",
+                    prod_type: ProdType {
+                        id: "single",
+                        fields: [
+                            Field {
+                                id: "stm1",
+                                type_id: "stm",
+                                is_single: true,
+                                is_option: false,
+                                is_sequence: false
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        SumType {
+            id: "noFileds",
+            constructors: [
+                Constructor {
+                    id: "One",
+                    prod_type: ProdType {
+                        id: "one",
+                        fields: []
+                    }
+                },
+                Constructor {
+                    id: "Two",
+                    prod_type: ProdType {
+                        id: "two",
+                        fields: []
+                    }
+                },
+                Constructor {
+                    id: "Tree",
+                    prod_type: ProdType {
+                        id: "tree",
+                        fields: []
+                    }
+                }
+            ]
+        }
+    ],
     prod_types: [
         ProdType {
             id: "prodType",
@@ -19,66 +89,54 @@ Asdl {
                 Field {
                     id: "s1",
                     type_id: "stm",
-                    is_single: false,
-                    is_option: true,
+                    is_single: true,
+                    is_option: false,
                     is_sequence: false
                 }
             ]
-        }
-    ],
-    sum_types: [
-        SumType {
-            id: "stm",
-            constructors: [
-                Constructor {
-                    id: "Compound",
-                    fields: [
-                        Field {
-                            id: "s1",
-                            type_id: "stm",
-                            is_single: false,
-                            is_option: true,
-                            is_sequence: false
-                        },
-                        Field {
-                            id: "s2",
-                            type_id: "stm",
-                            is_single: false,
-                            is_option: false,
-                            is_sequence: true
-                        }
-                    ]
-                },
-                Constructor {
-                    id: "Single",
-                    fields: [
-                        Field {
-                            id: "stm1",
-                            type_id: "stm",
-                            is_single: false,
-                            is_option: true,
-                            is_sequence: false
-                        }
-                    ]
+        },
+        ProdType {
+            id: "tree",
+            fields: []
+        },
+        ProdType {
+            id: "single",
+            fields: [
+                Field {
+                    id: "stm1",
+                    type_id: "stm",
+                    is_single: true,
+                    is_option: false,
+                    is_sequence: false
                 }
             ]
         },
-        SumType {
-            id: "noFileds",
-            constructors: [
-                Constructor {
-                    id: "One",
-                    fields: []
+        ProdType {
+            id: "compound",
+            fields: [
+                Field {
+                    id: "s1",
+                    type_id: "stm",
+                    is_single: true,
+                    is_option: false,
+                    is_sequence: false
                 },
-                Constructor {
-                    id: "Two",
-                    fields: []
-                },
-                Constructor {
-                    id: "Tree",
-                    fields: []
+                Field {
+                    id: "s2",
+                    type_id: "stm",
+                    is_single: false,
+                    is_option: false,
+                    is_sequence: true
                 }
             ]
+        },
+        ProdType {
+            id: "one",
+            fields: []
+        },
+        ProdType {
+            id: "two",
+            fields: []
         }
     ]
 }

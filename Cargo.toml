@@ -5,6 +5,7 @@ name = "asdl-rs"
 version = "0.1.0"
 
 [dependencies]
+clap = "2.33.0"
 failure = "0.1.5"
 heck = "0.3.1"
 m_lexer = "0.0.4"
