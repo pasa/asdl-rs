@@ -64,11 +64,12 @@ impl {{ typeName }} {
 {% endfor %}
 
 {% for ty in prod_types %}
+{%- set typeName = ty.id | camel -%}
 #[derive(PartialEq, Eq, Hash, Debug)]
 #[repr(transparent)]
-pub(crate) struct {{ty.id | camel}}(SyntaxNode);
+pub(crate) struct {{typeName}}(SyntaxNode);
 
-impl {{ty.id | camel}} {
+impl {{typeName}} {
     {% for f in ty.fields -%}
     {% if f.is_option %}
     fn {{f.id | snake}}(&self) -> Option<&{{f.type_id | camel}}> {
@@ -85,5 +86,16 @@ impl {{ty.id | camel}} {
     }
     {% endif %}
     {% endfor %}
+
+    fn cast(syntax: &SyntaxNode) -> Option<&Self> {
+        match syntax.kind() {
+            {{ ty.id | SCREAM }} => Some({{ typeName }}::from_repr(syntax.into_repr())),
+            _ => None,
+        }
+    }
+
+    fn to_owned(&self) -> TreeArc<Self> {
+        TreeArc::cast(self.0.to_owned())
+    }
 }
 {% endfor %}
