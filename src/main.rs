@@ -1,5 +1,5 @@
 use std::fs;
-use std:: path::Path;
+use std::path::Path;
 
 use clap::{App, Arg};
 
@@ -14,8 +14,8 @@ fn main() -> Result<()> {
         .about("Parses asdl notation and generates source files according template.")
         .arg(
             Arg::with_name("asdl")
-                .short("a")
-                .long("asdl")
+                .short("i")
+                .long("input")
                 .value_name("ASDL FILE")
                 .help("Asdl file")
                 .takes_value(true),

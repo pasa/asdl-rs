@@ -1,14 +1,30 @@
+use rowan:: {
+    SmolStr,
+    SyntaxKind,
+    GreenNode,
+    GreenNodeBuilder,
+    SyntaxElement,
+    SyntaxNode,
+    SyntaxToken,
+    TreeArc,
+    TransparentNewType,
+    WalkEvent,
+};
+
+use super::*;
+
+
 {% for ty in sum_types %}
 {%- set typeName = ty.id | camel -%}
 #[derive(Debug)]
 #[repr(transparent)]
-struct {{typeName}}(SyntaxNode);
+pub(crate) struct {{typeName}}(SyntaxNode);
 
 unsafe impl TransparentNewType for {{ typeName }} {
     type Repr = rowan::SyntaxNode;
 }
 
-enum {{ typeName }}Kind<'a> {
+pub(crate) enum {{ typeName }}Kind<'a> {
 {% for c in ty.constructors %}
     {{c.id | camel }}(&'a {{ c.prod_type.id | camel }}),
 {% endfor %}
@@ -50,7 +66,9 @@ impl {{ typeName }} {
 {% for ty in prod_types %}
 #[derive(PartialEq, Eq, Hash, Debug)]
 #[repr(transparent)]
-struct {{ty.id | camel}}(SyntaxNode) {
+pub(crate) struct {{ty.id | camel}}(SyntaxNode);
+
+impl {{ty.id | camel}} {
     {% for f in ty.fields -%}
     {% if f.is_option %}
     fn {{f.id | snake}}(&self) -> Option<&{{f.type_id | camel}}> {
