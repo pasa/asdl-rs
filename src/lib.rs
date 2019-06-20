@@ -111,21 +111,12 @@ mod tests {
         let asdl = r"
             stm = Compound(stm s1, stm* s2)
                 | Single(stm)
-            noFileds = One | Two| Tree
+            noFileds = One | Two | Tree
             prodType = (noFileds? f, stm s1)
             ";
         let root: &parser::Root = &parser::parse(&asdl);
-        // let model = Asdl::from(root);
+        let model = Asdl::from(root);
         assert_snapshot_matches!("simple_successful_test_syntax", root.debug_dump());
-        // assert_debug_snapshot_matches!("simple_successful_test_model", model)
+        assert_debug_snapshot_matches!("simple_successful_test_model", model)
     }
-
-    #[test]
-    fn generate_parser_structs() {
-        let asdl = fs::read_to_string("src/parser/parser.asdl").unwrap();
-        let template = fs::read_to_string("src/parser/generated.rs.tera").unwrap();
-        let res = crate::generate(&asdl, &template);
-        println!("{}", res);
-    }
-
 }

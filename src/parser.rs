@@ -30,7 +30,7 @@ const EQ: SyntaxKind = SyntaxKind(9); // '='
 const ERROR: SyntaxKind = SyntaxKind(10); // as well as errors
                                           //
 
-const SINGLE: SyntaxKind = SyntaxKind(10);
+const SINGLE: SyntaxKind = SyntaxKind(11);
 const OPT: SyntaxKind = Q_MARK;
 const SEQUENCE: SyntaxKind = STAR;
 
@@ -188,6 +188,7 @@ impl Parser {
         self.constructor();
         loop {
             self.skip_ws();
+            self.bump_reserved();
             match self.current() {
                 Some(PIPE) => {
                     self.bump();
@@ -204,6 +205,7 @@ impl Parser {
 
     fn constructor(&mut self) -> ParseStatus {
         self.skip_ws();
+        self.bump_reserved();
         match self.current() {
             Some(CONSTR_ID) => {
                 self.builder.start_node(CONSTR);
@@ -244,6 +246,7 @@ impl Parser {
     }
 
     fn field(&mut self) -> ParseStatus {
+        self.skip_ws();
         if let Some(TYPE_ID) = self.current() {
             self.builder.start_node(FIELD);
             self.bump();
@@ -265,7 +268,7 @@ impl Parser {
             STAR | Q_MARK => {
                 self.bump();
             }
-            _ => (),
+            _ => self.builder.token(SINGLE, SmolStr::new(""))
         }
         ParseStatus::Ok
     }
@@ -312,12 +315,14 @@ impl Parser {
     }
 
     fn bump_replace(&mut self, new_kind: SyntaxKind) {
+        self.bump_reserved();
         let (_, text) = self.tokens.pop().unwrap();
         self.builder.token(new_kind, text);
     }
 
     fn current(&self) -> Option<SyntaxKind> {
-        self.tokens.last().map(|(kind, _)| *kind)
+        let last = self.tokens.last();
+        last.map(|(kind, _)| *kind)
     }
 }
 
