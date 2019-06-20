@@ -7,10 +7,7 @@ use serde::{
         Serialize,
 };
 
-use crate:: {
-        Root,
-        TypeKind::*
-};
+use crate::parser;
 
 #[derive(Serialize, Debug)]
 pub(crate) struct Asdl {
@@ -59,17 +56,16 @@ impl Field {
     }
 }
 
-impl From<&Root> for Asdl {
-    fn from(root: &Root) -> Self {
+impl From<&parser::Root> for Asdl {
+    fn from(root: &parser::Root) -> Self {
         let mut res = Asdl { prod_types: vec![], sum_types: vec![] };
-        for d in root.defs() {
-            let type_id = d.type_id().text().to_string();
-            match d.ty().kind() {
-                Sum(t) => {
-                    res.sum_types.push(sum_type(type_id, t));
+        for d in root.types() {
+            match d.kind() {
+                parser::TypeKind::SumType(t) => {
+                    res.sum_types.push(sum_type(t));
                 }
-                Prod(t) => {
-                    res.prod_types.push(prod_type(type_id, t));
+                parser::TypeKind::ProdType(t) => {
+                    res.prod_types.push(prod_type(t));
                 }
             }
         }
@@ -83,40 +79,42 @@ impl From<&Root> for Asdl {
     }
 }
 
-fn sum_type(id: String, node: &crate::SumType) -> SumType {
+fn sum_type(node: &parser::SumType) -> SumType {
+    let id = node.type_id().text().to_string();
     let constructors = node.constructors().map(constructor).collect();
     SumType { id, constructors }
 }
 
-fn constructor(node: &crate::Constr) -> Constructor {
+fn constructor(node: &parser::Constr) -> Constructor {
     let id = node.id().text().to_string();
-    let fields = match node.fields() {
-        Option::Some(fs) => fields(fs),
-        Option::None => vec![],
-    };
+    let mut names = FieldNames::default();
+    let fields: Vec<Field> = node.fields().map(|f| field(f, &mut names)).collect();
     let pt = ProdType { id: id.to_mixed_case(), fields };
     Constructor { id, prod_type: pt }
 }
 
-fn fields(fields: &crate::Fields) -> Vec<Field> {
-    let mut names = FieldNames::default();
-    fields.fields().map(|f| field(f, &mut names)).collect()
-}
-
-fn field(node: &crate::Field, names: &mut FieldNames) -> Field {
-    let type_id = node.type_id().text().to_string();
-    let id = names.get_or_generate(node);
-    if node.star().is_some() {
-        Field::sequence(id, type_id)
-    } else if node.q_mark().is_some() {
-        Field::option(id, type_id)
-    } else {
-        Field::single(id, type_id)
+fn field(node: &parser::Field, names: &mut FieldNames) -> Field {
+    match node.kind() {
+        parser::FieldKind::Single(f) => Field::single(
+            names.get_or_generate(f.id(), f.type_id()),
+            f.type_id().text().to_string(),
+        ),
+        parser::FieldKind::Opt(f) => Field::option(
+            names.get_or_generate(f.id(), f.type_id()),
+            f.type_id().text().to_string(),
+        ),
+        parser::FieldKind::Sequence(f) => Field::sequence(
+            names.get_or_generate(f.id(), f.type_id()),
+            f.type_id().text().to_string(),
+        ),
     }
 }
 
-fn prod_type(type_id: String, node: &crate::ProdType) -> ProdType {
-    ProdType { id: type_id, fields: fields(node.fields()) }
+fn prod_type(node: &parser::ProdType) -> ProdType {
+    let id = node.type_id().text().to_string();
+    let mut names = FieldNames::default();
+    let fields: Vec<Field> = node.fields().map(|f| field(f, &mut names)).collect();
+    ProdType { id, fields }
 }
 
 #[derive(Default)]
@@ -125,11 +123,11 @@ struct FieldNames {
 }
 
 impl FieldNames {
-    fn get_or_generate(&mut self, f: &crate::Field) -> String {
-        match f.id() {
+    fn get_or_generate(&mut self, id: Option<&parser::Id>, type_id: &parser::TypeId) -> String {
+        match id {
             Option::Some(id) => id.text().to_string(),
             Option::None => {
-                let type_id = f.type_id().text();
+                let type_id = type_id.text();
                 let index = self.names_indexes.entry(type_id.to_string()).or_insert(0);
                 let res = if *index == 0 {
                     type_id.to_string()
