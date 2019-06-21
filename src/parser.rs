@@ -9,9 +9,7 @@ use rowan:: {
     GreenNodeBuilder,
     SyntaxElement,
     SyntaxNode,
-    SyntaxToken,
     TreeArc,
-    TransparentNewType,
     WalkEvent,
 };
 
@@ -30,18 +28,17 @@ const EQ: SyntaxKind = SyntaxKind(9); // '='
 const ERROR: SyntaxKind = SyntaxKind(10); // as well as errors
                                           //
 
-const SINGLE: SyntaxKind = SyntaxKind(11);
-const OPT: SyntaxKind = Q_MARK;
-const SEQUENCE: SyntaxKind = STAR;
-
 //composite syntax kinds
 
 const ROOT: SyntaxKind = SyntaxKind(21);
-const SUM_TYPE: SyntaxKind = SyntaxKind(23);
-const PROD_TYPE: SyntaxKind = SyntaxKind(24);
-const CONSTR: SyntaxKind = SyntaxKind(25);
-const FIELD: SyntaxKind = SyntaxKind(27);
-const ID: SyntaxKind = SyntaxKind(28);
+const SUM_TYPE: SyntaxKind = SyntaxKind(22);
+const PROD_TYPE: SyntaxKind = SyntaxKind(23);
+const CONSTR: SyntaxKind = SyntaxKind(24);
+const ID: SyntaxKind = SyntaxKind(25);
+
+const SINGLE: SyntaxKind = SyntaxKind(26);
+const OPT: SyntaxKind = SyntaxKind(27);
+const SEQUENCE: SyntaxKind = SyntaxKind(28);
 
 impl TypeId {
     pub fn text(&self) -> &SmolStr {
@@ -81,10 +78,9 @@ impl Root {
                 WalkEvent::Enter(element) => {
                     indent!();
                     match element {
-                        SyntaxElement::Node(node) => writeln!(buf, "{:?}", node).unwrap(),
+                        SyntaxElement::Node(node) => writeln!(buf, "node {:?}", node).unwrap(),
                         SyntaxElement::Token(token) => {
-                            writeln!(buf, "{:?}", token).unwrap();
-                            let off = token.range().end();
+                            writeln!(buf, "token {:?}", token).unwrap();
                         }
                     }
                     level += 1;
@@ -114,8 +110,6 @@ struct Parser {
     /// the list of syntax errors we've accumulated
     /// so far.
     errors: Vec<String>,
-
-    reserve: Vec<(SyntaxKind, SmolStr)>,
 }
 
 enum ParseStatus {
@@ -149,14 +143,23 @@ impl Parser {
         };
         match t {
             TYPE_ID => {
-                self.reserve();
+                match self.wich_first(CONSTR_ID, L_PAREN) {
+                    Some(CONSTR_ID) => self.builder.start_node(SUM_TYPE),
+                    Some(L_PAREN) => self.builder.start_node(PROD_TYPE),
+                    Some(_) => self.errors.push("expected type declaration".to_string()),
+                    None => return ParseStatus::Eof,
+                }
+                self.builder.start_node(TYPE_ID);
+                self.bump();
+                self.builder.finish_node();
                 self.skip_ws();
                 match self.current() {
-                    Some(EQ) => self.reserve(),
+                    Some(EQ) => self.bump(),
                     None => return ParseStatus::Eof,
                     Some(_) => self.errors.push("expected `=`".to_string()),
                 }
                 self.type_def();
+                self.builder.finish_node();
             }
             ERROR => self.bump(),
             _ => unreachable!(),
@@ -168,19 +171,15 @@ impl Parser {
         self.skip_ws();
         match self.current() {
             Some(CONSTR_ID) => {
-                self.builder.start_node(SUM_TYPE);
-                self.bump_reserved();
                 self.constructors();
             }
             Some(L_PAREN) => {
-                self.builder.start_node(PROD_TYPE);
                 self.bump();
                 self.fields();
             }
             Some(_) => self.errors.push("expected type declaration".to_string()),
             None => return ParseStatus::Eof,
         }
-        self.builder.finish_node();
         ParseStatus::Ok
     }
 
@@ -188,7 +187,6 @@ impl Parser {
         self.constructor();
         loop {
             self.skip_ws();
-            self.bump_reserved();
             match self.current() {
                 Some(PIPE) => {
                     self.bump();
@@ -205,11 +203,12 @@ impl Parser {
 
     fn constructor(&mut self) -> ParseStatus {
         self.skip_ws();
-        self.bump_reserved();
         match self.current() {
             Some(CONSTR_ID) => {
                 self.builder.start_node(CONSTR);
+                self.builder.start_node(CONSTR_ID);
                 self.bump();
+                self.builder.finish_node();
                 self.skip_ws();
                 if let Some(L_PAREN) = self.current() {
                     self.bump();
@@ -248,9 +247,23 @@ impl Parser {
     fn field(&mut self) -> ParseStatus {
         self.skip_ws();
         if let Some(TYPE_ID) = self.current() {
-            self.builder.start_node(FIELD);
-            self.bump();
-            self.start_or_qmark();
+            match self.next() {
+                Some(STAR) => {
+                    self.builder.start_node(SEQUENCE);
+                    self.type_id();
+                    self.bump();
+                }
+                Some(Q_MARK) => {
+                    self.builder.start_node(OPT);
+                    self.type_id();
+                    self.bump();
+                }
+                Some(_) => {
+                    self.builder.start_node(SINGLE);
+                    self.type_id();
+                }
+                None => return ParseStatus::Eof,
+            }
             self.id();
             self.builder.finish_node();
             ParseStatus::Ok
@@ -259,18 +272,10 @@ impl Parser {
         }
     }
 
-    fn start_or_qmark(&mut self) -> ParseStatus {
-        let t = match self.current() {
-            None => return ParseStatus::Eof,
-            Some(t) => t,
-        };
-        match t {
-            STAR | Q_MARK => {
-                self.bump();
-            }
-            _ => self.builder.token(SINGLE, SmolStr::new(""))
-        }
-        ParseStatus::Ok
+    fn type_id(&mut self) {
+        self.builder.start_node(TYPE_ID);
+        self.bump();
+        self.builder.finish_node();
     }
 
     fn id(&mut self) -> ParseStatus {
@@ -281,48 +286,45 @@ impl Parser {
         };
         match t {
             TYPE_ID | CONSTR_ID => {
-                self.bump_replace(ID);
+                self.builder.start_node(ID);
+                self.bump();
+                self.builder.finish_node();
             }
             _ => (),
         }
         ParseStatus::Ok
     }
 
+    fn wich_first(&self, one: SyntaxKind, two: SyntaxKind) -> Option<SyntaxKind> {
+        for (kind, _) in self.tokens.iter().rev() {
+            if kind.0 == one.0 {
+                return Some(one);
+            } else if kind.0 == two.0 {
+                return Some(two);
+            }
+        }
+        None
+    }
+
     fn skip_ws(&mut self) {
         while self.current() == Some(WHITESPACE) {
-            self.reserve()
-        }
-    }
-
-    fn reserve(&mut self) {
-        self.reserve.push(self.tokens.pop().unwrap());
-    }
-
-    fn bump_reserved(&mut self) {
-        self.reserve.reverse();
-        loop {
-            match self.reserve.pop() {
-                Some((kind, text)) => self.builder.token(kind, text),
-                None => break
-            }
+            self.bump()
         }
     }
 
     fn bump(&mut self) {
-        self.bump_reserved();
         let (kind, text) = self.tokens.pop().unwrap();
         self.builder.token(kind, text);
-    }
-
-    fn bump_replace(&mut self, new_kind: SyntaxKind) {
-        self.bump_reserved();
-        let (_, text) = self.tokens.pop().unwrap();
-        self.builder.token(new_kind, text);
     }
 
     fn current(&self) -> Option<SyntaxKind> {
         let last = self.tokens.last();
         last.map(|(kind, _)| *kind)
+    }
+
+    fn next(&self) -> Option<SyntaxKind> {
+        let next = self.tokens.get(self.tokens.len() - 2);
+        next.map(|(kind, _)| *kind)
     }
 }
 
@@ -379,6 +381,5 @@ fn lex(text: &str) -> Vec<(SyntaxKind, SmolStr)> {
 pub(crate) fn parse(text: &str) -> TreeArc<Root> {
     let mut tokens = lex(text);
     tokens.reverse();
-    Parser { tokens, builder: GreenNodeBuilder::new(), errors: Vec::new(), reserve: Vec::new() }
-        .parse()
+    Parser { tokens, builder: GreenNodeBuilder::new(), errors: Vec::new() }.parse()
 }

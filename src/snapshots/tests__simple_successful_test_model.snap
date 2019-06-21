@@ -1,5 +1,5 @@
 ---
-created: "2019-06-17T11:47:23.384116309Z"
+created: "2019-06-21T14:05:59.258979281Z"
 creator: insta@0.8.1
 source: src/lib.rs
 expression: model
@@ -37,7 +37,7 @@ Asdl {
                         id: "single",
                         fields: [
                             Field {
-                                id: "stm1",
+                                id: "stm",
                                 type_id: "stm",
                                 is_single: true,
                                 is_option: false,
@@ -100,18 +100,6 @@ Asdl {
             fields: []
         },
         ProdType {
-            id: "single",
-            fields: [
-                Field {
-                    id: "stm1",
-                    type_id: "stm",
-                    is_single: true,
-                    is_option: false,
-                    is_sequence: false
-                }
-            ]
-        },
-        ProdType {
             id: "compound",
             fields: [
                 Field {
@@ -133,6 +121,18 @@ Asdl {
         ProdType {
             id: "one",
             fields: []
+        },
+        ProdType {
+            id: "single",
+            fields: [
+                Field {
+                    id: "stm",
+                    type_id: "stm",
+                    is_single: true,
+                    is_option: false,
+                    is_sequence: false
+                }
+            ]
         },
         ProdType {
             id: "two",

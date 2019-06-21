@@ -1,11 +1,9 @@
 use std::convert::From;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::fmt::Write;
-use heck::{CamelCase, ShoutySnakeCase, SnakeCase, MixedCase};
+use heck::MixedCase;
 
-use serde::{
-        Serialize,
-};
+use serde:: Serialize;
 
 use crate::parser;
 
