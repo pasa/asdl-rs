@@ -1,14 +1,7 @@
 use rowan:: {
-    SmolStr,
-    SyntaxKind,
-    GreenNode,
-    GreenNodeBuilder,
-    SyntaxElement,
     SyntaxNode,
-    SyntaxToken,
     TreeArc,
     TransparentNewType,
-    WalkEvent,
 };
 
 use super::*;
@@ -27,9 +20,8 @@ unsafe impl TransparentNewType for {{ typeName }} {
 pub(crate) enum {{ typeName }}Kind<'a> {
 {% for c in ty.constructors %}
     {{c.id | camel }}(&'a {{ c.prod_type.id | camel }}),
-{% endfor %}
+{%- endfor %}
 }
-
 {% for c in ty.constructors %}
 impl<'a> From<&'a {{c.id | camel }}> for &'a {{ typeName }} {
     fn from(n: &'a {{c.id | camel }}) -> &'a {{ typeName }} {
@@ -37,8 +29,9 @@ impl<'a> From<&'a {{c.id | camel }}> for &'a {{ typeName }} {
     }
 }
 {% endfor %}
-
 impl {{ typeName }} {
+
+    #[allow(unused)]
     pub(crate) fn cast(syntax: &SyntaxNode) -> Option<&Self> {
         match syntax.kind() {
             {%- for c in ty.constructors %}
@@ -48,6 +41,7 @@ impl {{ typeName }} {
         }
     }
 
+    #[allow(unused)]
     pub(crate) fn kind(&self) -> {{ typeName }}Kind {
         match self.0.kind() {
             {%- for c in ty.constructors %}
@@ -57,14 +51,15 @@ impl {{ typeName }} {
         }
     }
 
+    #[allow(unused)]
     pub(crate) fn to_owned(&self) -> TreeArc<Self> {
         TreeArc::cast(self.0.to_owned())
     }
 }
-{% endfor %}
 
+{% endfor %}
 {% for ty in prod_types %}
-{%- set typeName = ty.id | camel -%}
+{% set typeName = ty.id | camel %}
 #[derive(PartialEq, Eq, Hash, Debug)]
 #[repr(transparent)]
 pub(crate) struct {{typeName}}(SyntaxNode);
@@ -74,23 +69,25 @@ unsafe impl TransparentNewType for {{typeName}} {
 }
 
 impl {{typeName}} {
-    {% for f in ty.fields -%}
-    {% if f.is_option %}
+    {% for f in ty.fields %}
+    {% if f.is_option -%}
+    #[allow(unused)]
     pub(crate) fn {{f.id | snake}}(&self) -> Option<&{{f.type_id | camel}}> {
         self.0.children().find_map({{f.type_id | camel}}::cast)
     }
-    {{f.id | snake}}: Option<{{f.type_id | camel}}>
-    {% elif f.is_sequence %}
+    {% elif f.is_sequence -%}
+    #[allow(unused)]
     pub(crate) fn {{f.id | snake}}(&self) -> impl Iterator<Item = &{{f.type_id | camel}}> {
         self.0.children().filter_map({{f.type_id | camel}}::cast)
     }
-    {% else %}
+    {% else -%}
+    #[allow(unused)]
     pub(crate) fn {{f.id | snake}}(&self) -> &{{f.type_id | camel}} {
         self.0.children().find_map({{f.type_id | camel}}::cast).unwrap()
     }
-    {% endif %}
+    {% endif -%}
     {% endfor %}
-
+    #[allow(unused)]
     pub(crate) fn cast(syntax: &SyntaxNode) -> Option<&Self> {
         match syntax.kind() {
             {{ ty.id | SCREAM }} => Some({{ typeName }}::from_repr(syntax.into_repr())),
@@ -98,12 +95,14 @@ impl {{typeName}} {
         }
     }
 
+    #[allow(unused)]
     pub(crate) fn to_owned(&self) -> TreeArc<Self> {
         TreeArc::cast(self.0.to_owned())
     }
 
+    #[allow(unused)]
     pub(crate) fn syntax(&self) -> &SyntaxNode {
         &self.0
     }
 }
-{% endfor %}
+{%- endfor -%}

@@ -62,6 +62,8 @@ impl Id {
 }
 
 impl Root {
+
+    #[allow(unused)]
     pub(crate) fn debug_dump(&self) -> String {
         let mut level = 0;
         let mut buf = String::new();
@@ -93,6 +95,7 @@ impl Root {
         buf
     }
 
+    #[allow(unused)]
     fn preorder_with_tokens(&self) -> impl Iterator<Item = WalkEvent<SyntaxElement>> {
         self.syntax().preorder_with_tokens().map(|event| match event {
             WalkEvent::Enter(n) => WalkEvent::Enter(n.into()),
