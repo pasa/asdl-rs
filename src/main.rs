@@ -3,9 +3,7 @@ use std::path::Path;
 
 use clap::{App, Arg};
 
-use asdl_rs::generate;
-
-pub type Result<T> = std::result::Result<T, failure::Error>;
+use asdl_rs::{generate, Result};
 
 fn main() -> Result<()> {
     let matches = App::new("Asdl generator")
@@ -41,7 +39,7 @@ fn main() -> Result<()> {
     let asdl = fs::read_to_string(asdl_file).unwrap();
     let template = fs::read_to_string(template_file).unwrap();
     let output_file = matches.value_of("output").unwrap();
-    let res = generate(&asdl, &template);
+    let res = generate(&asdl, &template)?;
     fs::write(Path::new(output_file), res)?;
     Ok(())
 }

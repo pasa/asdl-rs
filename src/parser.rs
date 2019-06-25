@@ -13,6 +13,8 @@ use rowan:: {
     WalkEvent,
 };
 
+use crate::Result;
+
 pub(crate) use self::generated::*;
 
 const L_PAREN: SyntaxKind = SyntaxKind(0); // '('
@@ -381,8 +383,8 @@ fn lex(text: &str) -> Vec<(SyntaxKind, SmolStr)> {
         .collect()
 }
 
-pub(crate) fn parse(text: &str) -> TreeArc<Root> {
+pub(crate) fn parse(text: &str) -> Result<TreeArc<Root>> {
     let mut tokens = lex(text);
     tokens.reverse();
-    Parser { tokens, builder: GreenNodeBuilder::new(), errors: Vec::new() }.parse()
+    Ok(Parser { tokens, builder: GreenNodeBuilder::new(), errors: Vec::new() }.parse())
 }

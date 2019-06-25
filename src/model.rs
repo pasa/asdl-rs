@@ -8,7 +8,7 @@ use serde:: Serialize;
 use crate::parser;
 
 #[derive(Serialize, Debug)]
-pub(crate) struct Asdl {
+pub struct Asdl {
     sum_types: Vec<SumType>,
     prod_types: Vec<ProdType>,
 }
@@ -54,8 +54,8 @@ impl Field {
     }
 }
 
-impl From<&parser::Root> for Asdl {
-    fn from(root: &parser::Root) -> Self {
+impl Asdl {
+    pub(crate)fn aaa(root: &parser::Root) -> Self {
         let mut res = Asdl { prod_types: vec![], sum_types: vec![] };
         for d in root.types() {
             match d.kind() {
@@ -76,6 +76,29 @@ impl From<&parser::Root> for Asdl {
         res
     }
 }
+
+// impl From<&parser::Root> for Asdl {
+//     fn from(root: &parser::Root) -> Self {
+//         let mut res = Asdl { prod_types: vec![], sum_types: vec![] };
+//         for d in root.types() {
+//             match d.kind() {
+//                 parser::TypeKind::SumType(t) => {
+//                     res.sum_types.push(sum_type(t));
+//                 }
+//                 parser::TypeKind::ProdType(t) => {
+//                     res.prod_types.push(prod_type(t));
+//                 }
+//             }
+//         }
+//         let syntetic_prod_types: FxHashSet<ProdType> = res
+//             .sum_types
+//             .iter()
+//             .flat_map(|t| t.constructors.iter().map(|c| c.prod_type.clone()))
+//             .collect();
+//         res.prod_types.extend(syntetic_prod_types);
+//         res
+//     }
+// }
 
 fn sum_type(node: &parser::SumType) -> SumType {
     let id = node.type_id().text().to_string();
