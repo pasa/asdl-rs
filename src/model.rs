@@ -1,8 +1,8 @@
-use std::convert::From;
-use rustc_hash::{FxHashMap, FxHashSet};
 use std::fmt::Write;
-use heck::MixedCase;
 
+use rustc_hash::FxHashMap;
+use heck::MixedCase;
+use linked_hash_set::LinkedHashSet;
 use serde:: Serialize;
 
 use crate::parser;
@@ -55,7 +55,7 @@ impl Field {
 }
 
 impl Asdl {
-    pub(crate)fn aaa(root: &parser::Root) -> Self {
+    pub(crate)fn new(root: &parser::Root) -> Self {
         let mut res = Asdl { prod_types: vec![], sum_types: vec![] };
         for d in root.types() {
             match d.kind() {
@@ -67,38 +67,15 @@ impl Asdl {
                 }
             }
         }
-        let syntetic_prod_types: FxHashSet<ProdType> = res
+        let synthetic_prod_types: LinkedHashSet<ProdType> = res
             .sum_types
             .iter()
             .flat_map(|t| t.constructors.iter().map(|c| c.prod_type.clone()))
             .collect();
-        res.prod_types.extend(syntetic_prod_types);
+        res.prod_types.extend(synthetic_prod_types);
         res
     }
 }
-
-// impl From<&parser::Root> for Asdl {
-//     fn from(root: &parser::Root) -> Self {
-//         let mut res = Asdl { prod_types: vec![], sum_types: vec![] };
-//         for d in root.types() {
-//             match d.kind() {
-//                 parser::TypeKind::SumType(t) => {
-//                     res.sum_types.push(sum_type(t));
-//                 }
-//                 parser::TypeKind::ProdType(t) => {
-//                     res.prod_types.push(prod_type(t));
-//                 }
-//             }
-//         }
-//         let syntetic_prod_types: FxHashSet<ProdType> = res
-//             .sum_types
-//             .iter()
-//             .flat_map(|t| t.constructors.iter().map(|c| c.prod_type.clone()))
-//             .collect();
-//         res.prod_types.extend(syntetic_prod_types);
-//         res
-//     }
-// }
 
 fn sum_type(node: &parser::SumType) -> SumType {
     let id = node.type_id().text().to_string();

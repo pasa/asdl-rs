@@ -1,5 +1,5 @@
 ---
-created: "2019-06-21T14:05:59.258979281Z"
+created: "2019-07-02T07:42:57.867373528Z"
 creator: insta@0.8.1
 source: src/lib.rs
 expression: model
@@ -19,17 +19,17 @@ Asdl {
                                 type_id: "stm",
                                 is_single: true,
                                 is_option: false,
-                                is_sequence: false
+                                is_sequence: false,
                             },
                             Field {
                                 id: "s2",
                                 type_id: "stm",
                                 is_single: false,
                                 is_option: false,
-                                is_sequence: true
-                            }
-                        ]
-                    }
+                                is_sequence: true,
+                            },
+                        ],
+                    },
                 },
                 Constructor {
                     id: "Single",
@@ -41,12 +41,12 @@ Asdl {
                                 type_id: "stm",
                                 is_single: true,
                                 is_option: false,
-                                is_sequence: false
-                            }
-                        ]
-                    }
-                }
-            ]
+                                is_sequence: false,
+                            },
+                        ],
+                    },
+                },
+            ],
         },
         SumType {
             id: "noFileds",
@@ -55,25 +55,25 @@ Asdl {
                     id: "One",
                     prod_type: ProdType {
                         id: "one",
-                        fields: []
-                    }
+                        fields: [],
+                    },
                 },
                 Constructor {
                     id: "Two",
                     prod_type: ProdType {
                         id: "two",
-                        fields: []
-                    }
+                        fields: [],
+                    },
                 },
                 Constructor {
-                    id: "Tree",
+                    id: "Three",
                     prod_type: ProdType {
-                        id: "tree",
-                        fields: []
-                    }
-                }
-            ]
-        }
+                        id: "three",
+                        fields: [],
+                    },
+                },
+            ],
+        },
     ],
     prod_types: [
         ProdType {
@@ -84,20 +84,16 @@ Asdl {
                     type_id: "noFileds",
                     is_single: false,
                     is_option: true,
-                    is_sequence: false
+                    is_sequence: false,
                 },
                 Field {
                     id: "s1",
                     type_id: "stm",
                     is_single: true,
                     is_option: false,
-                    is_sequence: false
-                }
-            ]
-        },
-        ProdType {
-            id: "tree",
-            fields: []
+                    is_sequence: false,
+                },
+            ],
         },
         ProdType {
             id: "compound",
@@ -107,20 +103,16 @@ Asdl {
                     type_id: "stm",
                     is_single: true,
                     is_option: false,
-                    is_sequence: false
+                    is_sequence: false,
                 },
                 Field {
                     id: "s2",
                     type_id: "stm",
                     is_single: false,
                     is_option: false,
-                    is_sequence: true
-                }
-            ]
-        },
-        ProdType {
-            id: "one",
-            fields: []
+                    is_sequence: true,
+                },
+            ],
         },
         ProdType {
             id: "single",
@@ -130,13 +122,21 @@ Asdl {
                     type_id: "stm",
                     is_single: true,
                     is_option: false,
-                    is_sequence: false
-                }
-            ]
+                    is_sequence: false,
+                },
+            ],
+        },
+        ProdType {
+            id: "one",
+            fields: [],
         },
         ProdType {
             id: "two",
-            fields: []
-        }
-    ]
+            fields: [],
+        },
+        ProdType {
+            id: "three",
+            fields: [],
+        },
+    ],
 }

@@ -2,7 +2,7 @@ mod model;
 mod parser;
 
 use tera::*;
-use failure::{Error, format_err};
+use failure::format_err;
 use heck::{CamelCase, ShoutySnakeCase, SnakeCase, MixedCase};
 
 pub use model::Asdl;
@@ -11,7 +11,7 @@ pub type Result<T> = std::result::Result<T, failure::Error>;
 
 pub fn model(asdl: &str) -> Result<Asdl> {
     let root = parser::parse(asdl)?;
-    Ok(Asdl::aaa(&root))
+    Ok(Asdl::new(&root))
 }
 
 pub fn generate(asdl: &str, template: &str) -> Result<String> {
@@ -40,12 +40,12 @@ mod tests {
         let asdl = r"
             stm = Compound(stm s1, stm* s2)
                 | Single(stm)
-            noFileds = One | Two | Tree
+            noFileds = One | Two | Three
             prodType = (noFileds? f, stm s1)
             ";
         let root = parser::parse(&asdl).unwrap();
         assert_snapshot_matches!("simple_successful_test_syntax", root.debug_dump());
-        let model = Asdl::aaa(&root);
+        let model = Asdl::new(&root);
         assert_debug_snapshot_matches!("simple_successful_test_model", model)
     }
 }
