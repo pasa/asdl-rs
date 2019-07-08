@@ -82,9 +82,13 @@ impl Root {
                 WalkEvent::Enter(element) => {
                     indent!();
                     match element {
-                        SyntaxElement::Node(node) => writeln!(buf, "node {:?}", node).unwrap(),
+                        SyntaxElement::Node(node) => writeln!(buf, "node {}{}", generated::kind_name(node.kind()), node.range()).unwrap(),
                         SyntaxElement::Token(token) => {
-                            writeln!(buf, "token {:?}", token).unwrap();
+                            if token.kind() == WHITESPACE {
+                                writeln!(buf, "token WS {}", token.range()).unwrap();
+                            } else {
+                                writeln!(buf, "token `{}` {}", token.text(), token.range()).unwrap();
+                            }
                         }
                     }
                     level += 1;
@@ -387,4 +391,17 @@ pub(crate) fn parse(text: &str) -> Result<TreeArc<Root>> {
     let mut tokens = lex(text);
     tokens.reverse();
     Ok(Parser { tokens, builder: GreenNodeBuilder::new(), errors: Vec::new() }.parse())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+    use insta::assert_snapshot_matches;
+
+    #[test]
+    fn empty_asdl() {
+        let asdl = r"";
+        let root = parser::parse(&asdl).unwrap();
+        assert_snapshot_matches!("empty_asdl", root.debug_dump());
+    }
 }

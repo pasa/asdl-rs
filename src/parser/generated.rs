@@ -285,6 +285,45 @@ impl Id {
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 #[repr(transparent)]
+pub(crate) struct SumType(SyntaxNode);
+
+unsafe impl TransparentNewType for SumType {
+    type Repr = rowan::SyntaxNode;
+}
+
+impl SumType {
+    
+    #[allow(unused)]
+    pub(crate) fn type_id(&self) -> &TypeId {
+        self.0.children().find_map(TypeId::cast).unwrap()
+    }
+    
+    #[allow(unused)]
+    pub(crate) fn constructors(&self) -> impl Iterator<Item = &Constr> {
+        self.0.children().filter_map(Constr::cast)
+    }
+    
+    #[allow(unused)]
+    pub(crate) fn cast(syntax: &SyntaxNode) -> Option<&Self> {
+        match syntax.kind() {
+            SUM_TYPE => Some(SumType::from_repr(syntax.into_repr())),
+            _ => None,
+        }
+    }
+
+    #[allow(unused)]
+    pub(crate) fn to_owned(&self) -> TreeArc<Self> {
+        TreeArc::cast(self.0.to_owned())
+    }
+
+    #[allow(unused)]
+    pub(crate) fn syntax(&self) -> &SyntaxNode {
+        &self.0
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Debug)]
+#[repr(transparent)]
 pub(crate) struct ProdType(SyntaxNode);
 
 unsafe impl TransparentNewType for ProdType {
@@ -307,45 +346,6 @@ impl ProdType {
     pub(crate) fn cast(syntax: &SyntaxNode) -> Option<&Self> {
         match syntax.kind() {
             PROD_TYPE => Some(ProdType::from_repr(syntax.into_repr())),
-            _ => None,
-        }
-    }
-
-    #[allow(unused)]
-    pub(crate) fn to_owned(&self) -> TreeArc<Self> {
-        TreeArc::cast(self.0.to_owned())
-    }
-
-    #[allow(unused)]
-    pub(crate) fn syntax(&self) -> &SyntaxNode {
-        &self.0
-    }
-}
-
-#[derive(PartialEq, Eq, Hash, Debug)]
-#[repr(transparent)]
-pub(crate) struct Sequence(SyntaxNode);
-
-unsafe impl TransparentNewType for Sequence {
-    type Repr = rowan::SyntaxNode;
-}
-
-impl Sequence {
-    
-    #[allow(unused)]
-    pub(crate) fn type_id(&self) -> &TypeId {
-        self.0.children().find_map(TypeId::cast).unwrap()
-    }
-    
-    #[allow(unused)]
-    pub(crate) fn id(&self) -> Option<&Id> {
-        self.0.children().find_map(Id::cast)
-    }
-    
-    #[allow(unused)]
-    pub(crate) fn cast(syntax: &SyntaxNode) -> Option<&Self> {
-        match syntax.kind() {
-            SEQUENCE => Some(Sequence::from_repr(syntax.into_repr())),
             _ => None,
         }
     }
@@ -441,13 +441,13 @@ impl Opt {
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 #[repr(transparent)]
-pub(crate) struct SumType(SyntaxNode);
+pub(crate) struct Sequence(SyntaxNode);
 
-unsafe impl TransparentNewType for SumType {
+unsafe impl TransparentNewType for Sequence {
     type Repr = rowan::SyntaxNode;
 }
 
-impl SumType {
+impl Sequence {
     
     #[allow(unused)]
     pub(crate) fn type_id(&self) -> &TypeId {
@@ -455,14 +455,14 @@ impl SumType {
     }
     
     #[allow(unused)]
-    pub(crate) fn constructors(&self) -> impl Iterator<Item = &Constr> {
-        self.0.children().filter_map(Constr::cast)
+    pub(crate) fn id(&self) -> Option<&Id> {
+        self.0.children().find_map(Id::cast)
     }
     
     #[allow(unused)]
     pub(crate) fn cast(syntax: &SyntaxNode) -> Option<&Self> {
         match syntax.kind() {
-            SUM_TYPE => Some(SumType::from_repr(syntax.into_repr())),
+            SEQUENCE => Some(Sequence::from_repr(syntax.into_repr())),
             _ => None,
         }
     }
@@ -475,5 +475,26 @@ impl SumType {
     #[allow(unused)]
     pub(crate) fn syntax(&self) -> &SyntaxNode {
         &self.0
+    }
+}
+#[allow(unused)]
+pub(crate) fn kind_name(kind: SyntaxKind) -> &'static str {
+    match kind {
+        SUM_TYPE => "SumType",
+        PROD_TYPE => "ProdType",
+        SINGLE => "Single",
+        OPT => "Opt",
+        SEQUENCE => "Sequence",
+        ROOT => "Root",
+        CONSTR => "Constr",
+        TYPE_ID => "TypeId",
+        CONSTR_ID => "ConstrId",
+        ID => "Id",
+        SUM_TYPE => "SumType",
+        PROD_TYPE => "ProdType",
+        SINGLE => "Single",
+        OPT => "Opt",
+        SEQUENCE => "Sequence",
+        _ => "Undefined"
     }
 }

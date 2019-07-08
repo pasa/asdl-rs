@@ -105,4 +105,18 @@ impl {{typeName}} {
         &self.0
     }
 }
-{%- endfor -%}
+{%- endfor%}
+#[allow(unused)]
+pub(crate) fn kind_name(kind: SyntaxKind) -> &'static str {
+    match kind {
+        {%- for ty in sum_types %}
+        {%- for c in ty.constructors %}
+        {{ c.prod_type.id | SCREAM }} => "{{ c.prod_type.id | camel }}",
+        {%- endfor %}
+        {%- endfor %}
+        {%- for ty in prod_types %}
+        {{ ty.id | SCREAM }} => "{{ ty.id | camel }}",
+        {%- endfor %}
+        _ => "Undefined"
+    }
+}
