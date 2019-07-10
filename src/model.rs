@@ -1,8 +1,6 @@
 use std::fmt::Write;
 
 use rustc_hash::FxHashMap;
-use heck::MixedCase;
-use linked_hash_set::LinkedHashSet;
 use serde::Serialize;
 
 use crate::parser;

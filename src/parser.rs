@@ -22,6 +22,7 @@ const WHITESPACE: SyntaxKind = SyntaxKind(8); // whitespaces is explicit
 const EQ: SyntaxKind = SyntaxKind(9); // '='
 const ERROR: SyntaxKind = SyntaxKind(10); // as well as errors
 const ATTRIBUTES: SyntaxKind = SyntaxKind(11);
+const COMMENT: SyntaxKind = SyntaxKind(12);
 
 //composite syntax kinds
 
@@ -341,7 +342,7 @@ impl Parser {
     }
 
     fn skip_ws(&mut self) {
-        while self.current() == Some(WHITESPACE) {
+        while self.current() == Some(WHITESPACE) || self.current() == Some(COMMENT) {
             self.bump()
         }
     }
@@ -381,6 +382,7 @@ fn lex(text: &str) -> Vec<(SyntaxKind, SmolStr)> {
             9 => EQ,
             10 => ERROR,
             11 => ATTRIBUTES,
+            12 => COMMENT,
             _ => unreachable!(),
         }
     }
@@ -399,6 +401,7 @@ fn lex(text: &str) -> Vec<(SyntaxKind, SmolStr)> {
             (tok(TYPE_ID), r"([a-z][[[:alpha:]]_[0-9]]*)"),
             (tok(CONSTR_ID), r"([A-Z][[[:alpha:]]_[0-9]]*)"),
             (tok(WHITESPACE), r"\s+"),
+            (tok(COMMENT), r"//[^\n]*\n+"),
         ])
         .build();
 
@@ -430,5 +433,19 @@ mod tests {
         let asdl = r"";
         let root = parser::parse(&asdl).unwrap();
         assert_snapshot_matches!("empty_asdl", root.debug_dump());
+    }
+
+    #[test]
+    fn comments() {
+         let asdl = r"
+            // first comment
+            stm = Compound(stm s1, stm* s2)
+                | Single(stm) // second comment
+                  attributes(prodType?)
+            // third comment
+            prodType = (stm s1)
+            ";
+        let root = parser::parse(&asdl).unwrap();
+        assert_snapshot_matches!("comments", root.debug_dump());
     }
 }
