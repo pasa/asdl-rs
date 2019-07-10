@@ -48,4 +48,18 @@ mod tests {
         let model = Asdl::new(&root);
         assert_debug_snapshot_matches!("simple_successful_test_model", model)
     }
+
+    #[test]
+    fn attributes() {
+        let asdl = r"
+            stm = Compound(stm s1, stm* s2)
+                | Single(stm)
+                  attributes(prodType?)
+            prodType = (stm s1)
+            ";
+        let root = parser::parse(&asdl).unwrap();
+        assert_snapshot_matches!("attributes_syntax", root.debug_dump());
+         let model = Asdl::new(&root);
+        assert_debug_snapshot_matches!("attributes_model", model)
+    }
 }

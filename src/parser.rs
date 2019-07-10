@@ -2,15 +2,8 @@ mod generated;
 
 use std::fmt::Write;
 
-use rowan:: {
-    SmolStr,
-    SyntaxKind,
-    GreenNode,
-    GreenNodeBuilder,
-    SyntaxElement,
-    SyntaxNode,
-    TreeArc,
-    WalkEvent,
+use rowan::{
+    SmolStr, SyntaxKind, GreenNode, GreenNodeBuilder, SyntaxElement, SyntaxNode, TreeArc, WalkEvent,
 };
 
 use crate::Result;
@@ -28,7 +21,7 @@ const CONSTR_ID: SyntaxKind = SyntaxKind(7);
 const WHITESPACE: SyntaxKind = SyntaxKind(8); // whitespaces is explicit
 const EQ: SyntaxKind = SyntaxKind(9); // '='
 const ERROR: SyntaxKind = SyntaxKind(10); // as well as errors
-                                          //
+const ATTRIBUTES: SyntaxKind = SyntaxKind(11);
 
 //composite syntax kinds
 
@@ -41,6 +34,7 @@ const ID: SyntaxKind = SyntaxKind(25);
 const SINGLE: SyntaxKind = SyntaxKind(26);
 const OPT: SyntaxKind = SyntaxKind(27);
 const SEQUENCE: SyntaxKind = SyntaxKind(28);
+const ATTRS: SyntaxKind = SyntaxKind(29);
 
 impl TypeId {
     pub fn text(&self) -> &SmolStr {
@@ -64,7 +58,6 @@ impl Id {
 }
 
 impl Root {
-
     #[allow(unused)]
     pub(crate) fn debug_dump(&self) -> String {
         let mut level = 0;
@@ -82,12 +75,19 @@ impl Root {
                 WalkEvent::Enter(element) => {
                     indent!();
                     match element {
-                        SyntaxElement::Node(node) => writeln!(buf, "node {}{}", generated::kind_name(node.kind()), node.range()).unwrap(),
+                        SyntaxElement::Node(node) => writeln!(
+                            buf,
+                            "node {}{}",
+                            generated::kind_name(node.kind()),
+                            node.range()
+                        )
+                        .unwrap(),
                         SyntaxElement::Token(token) => {
                             if token.kind() == WHITESPACE {
                                 writeln!(buf, "token WS {}", token.range()).unwrap();
                             } else {
-                                writeln!(buf, "token `{}` {}", token.text(), token.range()).unwrap();
+                                writeln!(buf, "token `{}` {}", token.text(), token.range())
+                                    .unwrap();
                             }
                         }
                     }
@@ -152,7 +152,7 @@ impl Parser {
         };
         match t {
             TYPE_ID => {
-                match self.wich_first(CONSTR_ID, L_PAREN) {
+                match self.which_first(CONSTR_ID, L_PAREN) {
                     Some(CONSTR_ID) => self.builder.start_node(SUM_TYPE),
                     Some(L_PAREN) => self.builder.start_node(PROD_TYPE),
                     Some(_) => self.errors.push("expected type declaration".to_string()),
@@ -181,12 +181,37 @@ impl Parser {
         match self.current() {
             Some(CONSTR_ID) => {
                 self.constructors();
+                self.attributes();
             }
             Some(L_PAREN) => {
                 self.bump();
                 self.fields();
             }
             Some(_) => self.errors.push("expected type declaration".to_string()),
+            None => return ParseStatus::Eof,
+        }
+        ParseStatus::Ok
+    }
+
+    fn attributes(&mut self) -> ParseStatus {
+        self.skip_ws();
+        match self.current() {
+            Some(ATTRIBUTES) => {
+                self.builder.start_node(ATTRS);
+                self.bump();
+                self.skip_ws();
+                match self.current() {
+                    Some(L_PAREN) => {
+                        self.bump();
+                        self.fields();
+                    }
+                    Some(_) => self.errors.push("expected '('".to_string()),
+                    None => return ParseStatus::Eof,
+                }
+                self.attributes();
+                self.builder.finish_node();
+            }
+            Some(_) => return ParseStatus::Ok,
             None => return ParseStatus::Eof,
         }
         ParseStatus::Ok
@@ -304,7 +329,7 @@ impl Parser {
         ParseStatus::Ok
     }
 
-    fn wich_first(&self, one: SyntaxKind, two: SyntaxKind) -> Option<SyntaxKind> {
+    fn which_first(&self, one: SyntaxKind, two: SyntaxKind) -> Option<SyntaxKind> {
         for (kind, _) in self.tokens.iter().rev() {
             if kind.0 == one.0 {
                 return Some(one);
@@ -355,6 +380,7 @@ fn lex(text: &str) -> Vec<(SyntaxKind, SmolStr)> {
             8 => WHITESPACE,
             9 => EQ,
             10 => ERROR,
+            11 => ATTRIBUTES,
             _ => unreachable!(),
         }
     }
@@ -369,6 +395,7 @@ fn lex(text: &str) -> Vec<(SyntaxKind, SmolStr)> {
             (tok(STAR), r"\*"),
             (tok(COMMA), r","),
             (tok(EQ), r"="),
+            (tok(ATTRIBUTES), r"attributes"),
             (tok(TYPE_ID), r"([a-z][[[:alpha:]]_[0-9]]*)"),
             (tok(CONSTR_ID), r"([A-Z][[[:alpha:]]_[0-9]]*)"),
             (tok(WHITESPACE), r"\s+"),

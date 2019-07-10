@@ -1,5 +1,5 @@
 ---
-created: "2019-07-09T10:45:42.813807878Z"
+created: "2019-07-09T10:46:15.657691214Z"
 creator: insta@0.8.1
 source: src/lib.rs
 expression: model
@@ -41,38 +41,21 @@ Asdl {
                     ],
                 },
             ],
-            attributes: [],
-        },
-        SumType {
-            id: "noFileds",
-            constructors: [
-                Constructor {
-                    id: "One",
-                    fields: [],
-                },
-                Constructor {
-                    id: "Two",
-                    fields: [],
-                },
-                Constructor {
-                    id: "Three",
-                    fields: [],
+            attributes: [
+                Field {
+                    id: "prodType",
+                    type_id: "prodType",
+                    is_single: false,
+                    is_option: true,
+                    is_sequence: false,
                 },
             ],
-            attributes: [],
         },
     ],
     prod_types: [
         ProdType {
             id: "prodType",
             fields: [
-                Field {
-                    id: "f",
-                    type_id: "noFileds",
-                    is_single: false,
-                    is_option: true,
-                    is_sequence: false,
-                },
                 Field {
                     id: "s1",
                     type_id: "stm",

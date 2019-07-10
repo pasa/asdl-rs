@@ -3,7 +3,7 @@ use std::fmt::Write;
 use rustc_hash::FxHashMap;
 use heck::MixedCase;
 use linked_hash_set::LinkedHashSet;
-use serde:: Serialize;
+use serde::Serialize;
 
 use crate::parser;
 
@@ -17,12 +17,13 @@ pub struct Asdl {
 pub(crate) struct SumType {
     id: String,
     constructors: Vec<Constructor>,
+    attributes: Vec<Field>,
 }
 
 #[derive(Serialize, Debug)]
 pub(crate) struct Constructor {
     id: String,
-    prod_type: ProdType,
+    fields: Vec<Field>,
 }
 
 #[derive(Serialize, Debug, Clone, Hash, Eq, PartialEq)]
@@ -55,7 +56,7 @@ impl Field {
 }
 
 impl Asdl {
-    pub(crate)fn new(root: &parser::Root) -> Self {
+    pub(crate) fn new(root: &parser::Root) -> Self {
         let mut res = Asdl { prod_types: vec![], sum_types: vec![] };
         for d in root.types() {
             match d.kind() {
@@ -67,12 +68,6 @@ impl Asdl {
                 }
             }
         }
-        let synthetic_prod_types: LinkedHashSet<ProdType> = res
-            .sum_types
-            .iter()
-            .flat_map(|t| t.constructors.iter().map(|c| c.prod_type.clone()))
-            .collect();
-        res.prod_types.extend(synthetic_prod_types);
         res
     }
 }
@@ -80,15 +75,20 @@ impl Asdl {
 fn sum_type(node: &parser::SumType) -> SumType {
     let id = node.type_id().text().to_string();
     let constructors = node.constructors().map(constructor).collect();
-    SumType { id, constructors }
+    let attributes = if let Some(attrs) = node.attrs() {
+        let mut names = FieldNames::default();
+        attrs.fields().map(|f| field(f, &mut names)).collect()
+    } else {
+        vec![]
+    };
+    SumType { id, constructors, attributes }
 }
 
 fn constructor(node: &parser::Constr) -> Constructor {
     let id = node.id().text().to_string();
     let mut names = FieldNames::default();
     let fields: Vec<Field> = node.fields().map(|f| field(f, &mut names)).collect();
-    let pt = ProdType { id: id.to_mixed_case(), fields };
-    Constructor { id, prod_type: pt }
+    Constructor { id, fields }
 }
 
 fn field(node: &parser::Field, names: &mut FieldNames) -> Field {

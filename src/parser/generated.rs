@@ -198,6 +198,40 @@ impl Constr {
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 #[repr(transparent)]
+pub(crate) struct Attrs(SyntaxNode);
+
+unsafe impl TransparentNewType for Attrs {
+    type Repr = rowan::SyntaxNode;
+}
+
+impl Attrs {
+    
+    #[allow(unused)]
+    pub(crate) fn fields(&self) -> impl Iterator<Item = &Field> {
+        self.0.children().filter_map(Field::cast)
+    }
+    
+    #[allow(unused)]
+    pub(crate) fn cast(syntax: &SyntaxNode) -> Option<&Self> {
+        match syntax.kind() {
+            ATTRS => Some(Attrs::from_repr(syntax.into_repr())),
+            _ => None,
+        }
+    }
+
+    #[allow(unused)]
+    pub(crate) fn to_owned(&self) -> TreeArc<Self> {
+        TreeArc::cast(self.0.to_owned())
+    }
+
+    #[allow(unused)]
+    pub(crate) fn syntax(&self) -> &SyntaxNode {
+        &self.0
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Debug)]
+#[repr(transparent)]
 pub(crate) struct TypeId(SyntaxNode);
 
 unsafe impl TransparentNewType for TypeId {
@@ -301,6 +335,11 @@ impl SumType {
     #[allow(unused)]
     pub(crate) fn constructors(&self) -> impl Iterator<Item = &Constr> {
         self.0.children().filter_map(Constr::cast)
+    }
+    
+    #[allow(unused)]
+    pub(crate) fn attrs(&self) -> Option<&Attrs> {
+        self.0.children().find_map(Attrs::cast)
     }
     
     #[allow(unused)]
@@ -487,6 +526,7 @@ pub(crate) fn kind_name(kind: SyntaxKind) -> &'static str {
         SEQUENCE => "Sequence",
         ROOT => "Root",
         CONSTR => "Constr",
+        ATTRS => "Attrs",
         TYPE_ID => "TypeId",
         CONSTR_ID => "ConstrId",
         ID => "Id",
