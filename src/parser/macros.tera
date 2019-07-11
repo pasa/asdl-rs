@@ -1,0 +1,48 @@
+{%- macro type(ty) -%}
+{% set type_name = ty.id | camel %}
+#[derive(PartialEq, Eq, Hash, Debug)]
+#[repr(transparent)]
+pub(crate) struct {{type_name}}(SyntaxNode);
+
+unsafe impl TransparentNewType for {{type_name}} {
+    type Repr = rowan::SyntaxNode;
+}
+
+impl {{type_name}} {
+    {% for f in ty.fields %}
+    {% if f.is_option -%}
+    #[allow(unused)]
+    pub(crate) fn {{f.id | snake}}(&self) -> Option<&{{f.type_id | camel}}> {
+        self.0.children().find_map({{f.type_id | camel}}::cast)
+    }
+    {% elif f.is_sequence -%}
+    #[allow(unused)]
+    pub(crate) fn {{f.id | snake}}(&self) -> impl Iterator<Item = &{{f.type_id | camel}}> {
+        self.0.children().filter_map({{f.type_id | camel}}::cast)
+    }
+    {% else -%}
+    #[allow(unused)]
+    pub(crate) fn {{f.id | snake}}(&self) -> &{{f.type_id | camel}} {
+        self.0.children().find_map({{f.type_id | camel}}::cast).unwrap()
+    }
+    {% endif -%}
+    {% endfor %}
+    #[allow(unused)]
+    pub(crate) fn cast(syntax: &SyntaxNode) -> Option<&Self> {
+        match syntax.kind() {
+            {{ ty.id | SCREAM }} => Some({{ type_name }}::from_repr(syntax.into_repr())),
+            _ => None,
+        }
+    }
+
+    #[allow(unused)]
+    pub(crate) fn to_owned(&self) -> TreeArc<Self> {
+        TreeArc::cast(self.0.to_owned())
+    }
+
+    #[allow(unused)]
+    pub(crate) fn syntax(&self) -> &SyntaxNode {
+        &self.0
+    }
+}
+{%- endmacro type -%}

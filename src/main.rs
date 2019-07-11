@@ -24,6 +24,7 @@ fn main() -> Result<()> {
                 .long("template")
                 .value_name("TERA FILE")
                 .help("Tera template file")
+                .multiple(true)
                 .required(true),
         )
         .arg(
@@ -34,12 +35,11 @@ fn main() -> Result<()> {
                 .help("Output file"),
         )
         .get_matches();
-    let template_file = matches.value_of("template").unwrap();
+    let template_files = matches.values_of("template").unwrap().map(|t| Path::new(t)).collect();
     let asdl_file = matches.value_of("asdl").unwrap();
     let asdl = fs::read_to_string(asdl_file).unwrap();
-    let template = fs::read_to_string(template_file).unwrap();
     let output_file = matches.value_of("output").unwrap();
-    let res = generate(&asdl, &template)?;
+    let res = generate(&asdl, &template_files)?;
     fs::write(Path::new(output_file), res)?;
     Ok(())
 }

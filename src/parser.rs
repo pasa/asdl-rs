@@ -437,7 +437,7 @@ mod tests {
 
     #[test]
     fn comments() {
-         let asdl = r"
+        let asdl = r"
             // first comment
             stm = Compound(stm s1, stm* s2)
                 | Single(stm) // second comment

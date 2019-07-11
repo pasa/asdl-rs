@@ -1,6 +1,8 @@
 mod model;
 mod parser;
 
+use std::path::Path;
+
 use tera::*;
 use failure::format_err;
 use heck::{CamelCase, ShoutySnakeCase, SnakeCase, MixedCase};
@@ -14,7 +16,7 @@ pub fn model(asdl: &str) -> Result<Asdl> {
     Ok(Asdl::new(&root))
 }
 
-pub fn generate(asdl: &str, template: &str) -> Result<String> {
+pub fn generate<P: AsRef<Path>>(asdl: &str, templates: &Vec<P>) -> Result<String> {
     let model = model(asdl)?;
     let mut tera = Tera::default();
     tera.register_filter("camel", |arg, _| Ok(arg.as_str().unwrap().to_camel_case().into()));
@@ -23,10 +25,13 @@ pub fn generate(asdl: &str, template: &str) -> Result<String> {
     tera.register_filter("SCREAM", |arg, _| {
         Ok(arg.as_str().unwrap().to_shouty_snake_case().into())
     });
-    tera.add_raw_template("_src", &template)
-        .map_err(|e| format_err!("template parsing error: {:?}", e))?;
-    tera.render("_src", &model)
-        .map_err(|e| format_err!("template rendering error: {:?}", e))
+    for t in templates {
+        tera.add_template_file(t, None)
+            .map_err(|e| format_err!("template parsing error: {:?}", e))?;
+    }
+
+    let main_template = templates.last().unwrap().as_ref().to_str().unwrap();
+    tera.render(main_template, &model).map_err(|e| format_err!("template rendering error: {:?}", e))
 }
 
 #[cfg(test)]
@@ -59,7 +64,7 @@ mod tests {
             ";
         let root = parser::parse(&asdl).unwrap();
         assert_snapshot_matches!("attributes_syntax", root.debug_dump());
-         let model = Asdl::new(&root);
+        let model = Asdl::new(&root);
         assert_debug_snapshot_matches!("attributes_model", model)
     }
 }
