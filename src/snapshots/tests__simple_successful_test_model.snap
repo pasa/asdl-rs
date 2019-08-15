@@ -1,86 +1,100 @@
 ---
-created: "2019-07-09T10:45:42.813807878Z"
+created: "2019-08-15T11:59:42.303743849Z"
 creator: insta@0.8.1
 source: src/lib.rs
 expression: model
 ---
 Asdl {
-    sum_types: [
-        SumType {
-            id: "stm",
-            constructors: [
-                Constructor {
-                    id: "Compound",
-                    fields: [
-                        Field {
-                            id: "s1",
-                            type_id: "stm",
-                            is_single: true,
-                            is_option: false,
-                            is_sequence: false,
-                        },
-                        Field {
-                            id: "s2",
-                            type_id: "stm",
-                            is_single: false,
-                            is_option: false,
-                            is_sequence: true,
-                        },
-                    ],
-                },
-                Constructor {
-                    id: "Single",
-                    fields: [
-                        Field {
-                            id: "stm",
-                            type_id: "stm",
-                            is_single: true,
-                            is_option: false,
-                            is_sequence: false,
-                        },
-                    ],
-                },
-            ],
-            attributes: [],
-        },
-        SumType {
-            id: "noFileds",
-            constructors: [
-                Constructor {
-                    id: "One",
-                    fields: [],
-                },
-                Constructor {
-                    id: "Two",
-                    fields: [],
-                },
-                Constructor {
-                    id: "Three",
-                    fields: [],
-                },
-            ],
-            attributes: [],
-        },
-    ],
+    types: {
+        "stm": SumType(
+            SumType {
+                id: "stm",
+                constructors: [
+                    Constructor {
+                        id: "Compound",
+                        fields: [
+                            Field {
+                                id: "s1",
+                                type_id: "stm",
+                                is_single: true,
+                                is_option: false,
+                                is_sequence: false,
+                            },
+                            Field {
+                                id: "s2",
+                                type_id: "stm",
+                                is_single: false,
+                                is_option: false,
+                                is_sequence: true,
+                            },
+                        ],
+                    },
+                    Constructor {
+                        id: "Single",
+                        fields: [
+                            Field {
+                                id: "stm",
+                                type_id: "stm",
+                                is_single: true,
+                                is_option: false,
+                                is_sequence: false,
+                            },
+                        ],
+                    },
+                ],
+                attributes: [],
+                is_prod_type: false,
+            },
+        ),
+        "noFileds": SumType(
+            SumType {
+                id: "noFileds",
+                constructors: [
+                    Constructor {
+                        id: "One",
+                        fields: [],
+                    },
+                    Constructor {
+                        id: "Two",
+                        fields: [],
+                    },
+                    Constructor {
+                        id: "Three",
+                        fields: [],
+                    },
+                ],
+                attributes: [],
+                is_prod_type: false,
+            },
+        ),
+        "prodType": ProdType(
+            ProdType {
+                id: "prodType",
+                fields: [
+                    Field {
+                        id: "f",
+                        type_id: "noFileds",
+                        is_single: false,
+                        is_option: true,
+                        is_sequence: false,
+                    },
+                    Field {
+                        id: "s1",
+                        type_id: "stm",
+                        is_single: true,
+                        is_option: false,
+                        is_sequence: false,
+                    },
+                ],
+                is_prod_type: true,
+            },
+        ),
+    },
     prod_types: [
-        ProdType {
-            id: "prodType",
-            fields: [
-                Field {
-                    id: "f",
-                    type_id: "noFileds",
-                    is_single: false,
-                    is_option: true,
-                    is_sequence: false,
-                },
-                Field {
-                    id: "s1",
-                    type_id: "stm",
-                    is_single: true,
-                    is_option: false,
-                    is_sequence: false,
-                },
-            ],
-        },
+        "prodType",
+    ],
+    sum_types: [
+        "stm",
+        "noFileds",
     ],
 }

@@ -12,7 +12,7 @@ pub use model::Asdl;
 pub type Result<T> = std::result::Result<T, failure::Error>;
 
 pub fn model(asdl: &str) -> Result<Asdl> {
-    let root = parser::parse(asdl)?;
+    let (_, root) = parser::parse(asdl).unwrap();
     Ok(Asdl::new(&root))
 }
 
@@ -37,7 +37,6 @@ pub fn generate<P: AsRef<Path>>(asdl: &str, templates: &Vec<P>) -> Result<String
 #[cfg(test)]
 mod tests {
     use crate::*;
-    use insta::assert_snapshot_matches;
     use insta::assert_debug_snapshot_matches;
 
     #[test]
@@ -48,8 +47,8 @@ mod tests {
             noFileds = One | Two | Three
             prodType = (noFileds? f, stm s1)
             ";
-        let root = parser::parse(&asdl).unwrap();
-        assert_snapshot_matches!("simple_successful_test_syntax", root.debug_dump());
+        let (_, root) = parser::parse(&asdl).unwrap();
+        assert_debug_snapshot_matches!("simple_successful_test_syntax", root);
         let model = Asdl::new(&root);
         assert_debug_snapshot_matches!("simple_successful_test_model", model)
     }
@@ -62,8 +61,8 @@ mod tests {
                   attributes(prodType?)
             prodType = (stm s1)
             ";
-        let root = parser::parse(&asdl).unwrap();
-        assert_snapshot_matches!("attributes_syntax", root.debug_dump());
+        let (_, root) = parser::parse(&asdl).unwrap();
+        assert_debug_snapshot_matches!("attributes_syntax", root);
         let model = Asdl::new(&root);
         assert_debug_snapshot_matches!("attributes_model", model)
     }

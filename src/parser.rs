@@ -1,451 +1,257 @@
 mod generated;
 
-use std::fmt::Write;
+use nom::IResult;
+use std::str;
+pub(crate) use generated::*;
 
-use rowan::{
-    SmolStr, SyntaxKind, GreenNode, GreenNodeBuilder, SyntaxElement, SyntaxNode, TreeArc, WalkEvent,
-};
+use std::ops::{RangeFrom, RangeTo};
 
-use crate::Result;
+use nom::combinator::recognize;
+use nom::character::complete::char;
+use nom::character::is_alphanumeric;
+use nom::sequence::pair;
+use nom::error::ParseError;
+use nom::InputTakeAtPosition;
+use nom::AsChar;
+use nom::bytes::complete::take_while_m_n;
+use nom::bytes::complete::take_while;
+use nom::branch::alt;
+use nom::character::complete::one_of;
+use nom::combinator::opt;
+use nom::sequence::tuple;
+use nom::character::complete::multispace1;
+use nom::character::complete::multispace0;
+use nom::multi::separated_list;
+use nom::{Slice, InputIter, Offset};
+use nom::combinator::map;
+use nom::bytes::complete::is_a;
+use nom::multi::many0;
 
-pub(crate) use self::generated::*;
-
-const L_PAREN: SyntaxKind = SyntaxKind(0); // '('
-const R_PAREN: SyntaxKind = SyntaxKind(1); // ')'
-const PIPE: SyntaxKind = SyntaxKind(2); // '|'
-const Q_MARK: SyntaxKind = SyntaxKind(3); // '?'
-const STAR: SyntaxKind = SyntaxKind(4); // '*'
-const COMMA: SyntaxKind = SyntaxKind(5); // ','
-const TYPE_ID: SyntaxKind = SyntaxKind(6);
-const CONSTR_ID: SyntaxKind = SyntaxKind(7);
-const WHITESPACE: SyntaxKind = SyntaxKind(8); // whitespaces is explicit
-const EQ: SyntaxKind = SyntaxKind(9); // '='
-const ERROR: SyntaxKind = SyntaxKind(10); // as well as errors
-const ATTRIBUTES: SyntaxKind = SyntaxKind(11);
-const COMMENT: SyntaxKind = SyntaxKind(12);
-
-//composite syntax kinds
-
-const ROOT: SyntaxKind = SyntaxKind(21);
-const SUM_TYPE: SyntaxKind = SyntaxKind(22);
-const PROD_TYPE: SyntaxKind = SyntaxKind(23);
-const CONSTR: SyntaxKind = SyntaxKind(24);
-const ID: SyntaxKind = SyntaxKind(25);
-
-const SINGLE: SyntaxKind = SyntaxKind(26);
-const OPT: SyntaxKind = SyntaxKind(27);
-const SEQUENCE: SyntaxKind = SyntaxKind(28);
-const ATTRS: SyntaxKind = SyntaxKind(29);
-
-impl TypeId {
-    pub fn text(&self) -> &SmolStr {
-        let ident = self.syntax().first_token().unwrap();
-        ident.text()
-    }
+pub(crate) fn parse(i: &str) -> IResult<&str, Root> {
+    map(many0(ty), Root::new)(i)
 }
 
-impl ConstrId {
-    pub fn text(&self) -> &SmolStr {
-        let ident = self.syntax().first_token().unwrap();
-        ident.text()
-    }
+fn ty(i: &str) -> IResult<&str, Type> {
+    alt((map(prod_type, |t| t.into()), map(sum_type, |t| t.into())))(i)
 }
 
-impl Id {
-    pub fn text(&self) -> &SmolStr {
-        let ident = self.syntax().first_token().unwrap();
-        ident.text()
-    }
+fn prod_type(i: &str) -> IResult<&str, ProdType> {
+    map(tuple((multispace0, type_id, char_ms0('='), fields)), |(_, type_id, _, fields)| {
+        ProdType::new(type_id, fields)
+    })(i)
 }
 
-impl Root {
-    #[allow(unused)]
-    pub(crate) fn debug_dump(&self) -> String {
-        let mut level = 0;
-        let mut buf = String::new();
-        macro_rules! indent {
-            () => {
-                for _ in 0..level {
-                    buf.push_str("  ");
-                }
-            };
-        }
-
-        for event in self.preorder_with_tokens() {
-            match event {
-                WalkEvent::Enter(element) => {
-                    indent!();
-                    match element {
-                        SyntaxElement::Node(node) => writeln!(
-                            buf,
-                            "node {}{}",
-                            generated::kind_name(node.kind()),
-                            node.range()
-                        )
-                        .unwrap(),
-                        SyntaxElement::Token(token) => {
-                            if token.kind() == WHITESPACE {
-                                writeln!(buf, "token WS {}", token.range()).unwrap();
-                            } else {
-                                writeln!(buf, "token `{}` {}", token.text(), token.range())
-                                    .unwrap();
-                            }
-                        }
-                    }
-                    level += 1;
-                }
-                WalkEvent::Leave(_) => level -= 1,
-            }
-        }
-
-        assert_eq!(level, 0);
-        buf
-    }
-
-    #[allow(unused)]
-    fn preorder_with_tokens(&self) -> impl Iterator<Item = WalkEvent<SyntaxElement>> {
-        self.syntax().preorder_with_tokens().map(|event| match event {
-            WalkEvent::Enter(n) => WalkEvent::Enter(n.into()),
-            WalkEvent::Leave(n) => WalkEvent::Leave(n.into()),
-        })
-    }
+fn sum_type(i: &str) -> IResult<&str, SumType> {
+    map(
+        tuple((multispace0, type_id, char_ms0('='), constructors, opt(attrs))),
+        |(_, type_id, _, constructors, attrs)| SumType::new(type_id, constructors, attrs),
+    )(i)
 }
 
-struct Parser {
-    /// input tokens, including whitespace,
-    /// in *reverse* order.
-    tokens: Vec<(SyntaxKind, SmolStr)>,
-    /// the in-progress tree.
-    builder: GreenNodeBuilder,
-    /// the list of syntax errors we've accumulated
-    /// so far.
-    errors: Vec<String>,
+fn attrs(i: &str) -> IResult<&str, Attrs> {
+    map(pair(is_a("attributes"), fields), |(_, flds)| Attrs::new(flds))(i)
 }
 
-enum ParseStatus {
-    Eof,
-    Ok,
+fn constructors(i: &str) -> IResult<&str, Vec<Constr>> {
+    separated_list(char_ms0('|'), constructor)(i)
 }
 
-impl Parser {
-    fn parse(mut self) -> TreeArc<Root> {
-        self.builder.start_node(ROOT.into());
-        self.skip_ws();
-        loop {
-            match self.def() {
-                ParseStatus::Ok => (),
-                ParseStatus::Eof => {
-                    break;
-                }
-            }
-        }
-        self.builder.finish_node();
-        let green: GreenNode = self.builder.finish();
-        let node = SyntaxNode::new(green, Some(Box::new(self.errors)));
-        Root::cast(&node).unwrap().to_owned()
-    }
+fn constructor(i: &str) -> IResult<&str, Constr> {
+    map(pair(con_id, opt(fields)), |(con_id, fields)| {
+        Constr::new(con_id, fields.unwrap_or_else(|| vec![]))
+    })(i)
+}
 
-    fn def(&mut self) -> ParseStatus {
-        self.skip_ws();
-        let t = match self.current() {
-            None => return ParseStatus::Eof,
-            Some(t) => t,
-        };
-        match t {
-            TYPE_ID => {
-                match self.which_first(CONSTR_ID, L_PAREN) {
-                    Some(CONSTR_ID) => self.builder.start_node(SUM_TYPE),
-                    Some(L_PAREN) => self.builder.start_node(PROD_TYPE),
-                    Some(_) => self.errors.push("expected type declaration".to_string()),
-                    None => return ParseStatus::Eof,
-                }
-                self.builder.start_node(TYPE_ID);
-                self.bump();
-                self.builder.finish_node();
-                self.skip_ws();
-                match self.current() {
-                    Some(EQ) => self.bump(),
-                    None => return ParseStatus::Eof,
-                    Some(_) => self.errors.push("expected `=`".to_string()),
-                }
-                self.type_def();
-                self.builder.finish_node();
-            }
-            ERROR => self.bump(),
+fn fields(i: &str) -> IResult<&str, Vec<Field>> {
+    let fields = separated_list(char_ms0(','), field);
+    let (i, (_, fields, _)) = tuple((char_ms0('('), fields, char_ms0(')')))(i)?;
+    Ok((i, fields))
+}
+
+fn field(i: &str) -> IResult<&str, Field> {
+    let (i, (type_id, rep, name)) =
+        tuple((type_id, field_repetition, opt(pair(multispace1, id))))(i)?;
+    let name = name.map(|n| n.1);
+    if let Some(rep) = rep {
+        match rep {
+            '*' => Ok((i, Sequence::new(type_id, name).into())),
+            '?' => Ok((i, Opt::new(type_id, name).into())),
             _ => unreachable!(),
         }
-        ParseStatus::Ok
-    }
-
-    fn type_def(&mut self) -> ParseStatus {
-        self.skip_ws();
-        match self.current() {
-            Some(CONSTR_ID) => {
-                self.constructors();
-                self.attributes();
-            }
-            Some(L_PAREN) => {
-                self.bump();
-                self.fields();
-            }
-            Some(_) => self.errors.push("expected type declaration".to_string()),
-            None => return ParseStatus::Eof,
-        }
-        ParseStatus::Ok
-    }
-
-    fn attributes(&mut self) -> ParseStatus {
-        self.skip_ws();
-        match self.current() {
-            Some(ATTRIBUTES) => {
-                self.builder.start_node(ATTRS);
-                self.bump();
-                self.skip_ws();
-                match self.current() {
-                    Some(L_PAREN) => {
-                        self.bump();
-                        self.fields();
-                    }
-                    Some(_) => self.errors.push("expected '('".to_string()),
-                    None => return ParseStatus::Eof,
-                }
-                self.attributes();
-                self.builder.finish_node();
-            }
-            Some(_) => return ParseStatus::Ok,
-            None => return ParseStatus::Eof,
-        }
-        ParseStatus::Ok
-    }
-
-    fn constructors(&mut self) -> ParseStatus {
-        self.constructor();
-        loop {
-            self.skip_ws();
-            match self.current() {
-                Some(PIPE) => {
-                    self.bump();
-                    self.constructor();
-                }
-                Some(_) => {
-                    break;
-                }
-                None => return ParseStatus::Eof,
-            }
-        }
-        ParseStatus::Ok
-    }
-
-    fn constructor(&mut self) -> ParseStatus {
-        self.skip_ws();
-        match self.current() {
-            Some(CONSTR_ID) => {
-                self.builder.start_node(CONSTR);
-                self.builder.start_node(CONSTR_ID);
-                self.bump();
-                self.builder.finish_node();
-                self.skip_ws();
-                if let Some(L_PAREN) = self.current() {
-                    self.bump();
-                    self.fields();
-                }
-            }
-            Some(_) => self.errors.push("expected constructor id".to_string()),
-            None => return ParseStatus::Eof,
-        }
-        self.builder.finish_node();
-        ParseStatus::Ok
-    }
-
-    fn fields(&mut self) -> ParseStatus {
-        self.skip_ws();
-        self.field();
-        loop {
-            self.skip_ws();
-            match self.current() {
-                Some(COMMA) => {
-                    self.skip_ws();
-                    self.bump();
-                    self.field();
-                }
-                Some(R_PAREN) => {
-                    self.bump();
-                    break;
-                }
-                Some(_) => self.errors.push("expected ',' or ')'".to_string()),
-                None => return ParseStatus::Eof,
-            }
-        }
-        ParseStatus::Ok
-    }
-
-    fn field(&mut self) -> ParseStatus {
-        self.skip_ws();
-        if let Some(TYPE_ID) = self.current() {
-            match self.next() {
-                Some(STAR) => {
-                    self.builder.start_node(SEQUENCE);
-                    self.type_id();
-                    self.bump();
-                }
-                Some(Q_MARK) => {
-                    self.builder.start_node(OPT);
-                    self.type_id();
-                    self.bump();
-                }
-                Some(_) => {
-                    self.builder.start_node(SINGLE);
-                    self.type_id();
-                }
-                None => return ParseStatus::Eof,
-            }
-            self.id();
-            self.builder.finish_node();
-            ParseStatus::Ok
-        } else {
-            ParseStatus::Eof
-        }
-    }
-
-    fn type_id(&mut self) {
-        self.builder.start_node(TYPE_ID);
-        self.bump();
-        self.builder.finish_node();
-    }
-
-    fn id(&mut self) -> ParseStatus {
-        self.skip_ws();
-        let t = match self.current() {
-            None => return ParseStatus::Eof,
-            Some(t) => t,
-        };
-        match t {
-            TYPE_ID | CONSTR_ID => {
-                self.builder.start_node(ID);
-                self.bump();
-                self.builder.finish_node();
-            }
-            _ => (),
-        }
-        ParseStatus::Ok
-    }
-
-    fn which_first(&self, one: SyntaxKind, two: SyntaxKind) -> Option<SyntaxKind> {
-        for (kind, _) in self.tokens.iter().rev() {
-            if kind.0 == one.0 {
-                return Some(one);
-            } else if kind.0 == two.0 {
-                return Some(two);
-            }
-        }
-        None
-    }
-
-    fn skip_ws(&mut self) {
-        while self.current() == Some(WHITESPACE) || self.current() == Some(COMMENT) {
-            self.bump()
-        }
-    }
-
-    fn bump(&mut self) {
-        let (kind, text) = self.tokens.pop().unwrap();
-        self.builder.token(kind, text);
-    }
-
-    fn current(&self) -> Option<SyntaxKind> {
-        let last = self.tokens.last();
-        last.map(|(kind, _)| *kind)
-    }
-
-    fn next(&self) -> Option<SyntaxKind> {
-        let next = self.tokens.get(self.tokens.len() - 2);
-        next.map(|(kind, _)| *kind)
+    } else {
+        Ok((i, Single::new(type_id, name).into()))
     }
 }
 
-fn lex(text: &str) -> Vec<(SyntaxKind, SmolStr)> {
-    fn tok(t: SyntaxKind) -> m_lexer::TokenKind {
-        m_lexer::TokenKind(t.0)
-    }
-
-    fn kind(t: m_lexer::TokenKind) -> SyntaxKind {
-        match t.0 {
-            0 => L_PAREN,
-            1 => R_PAREN,
-            2 => PIPE,
-            3 => Q_MARK,
-            4 => STAR,
-            5 => COMMA,
-            6 => TYPE_ID,
-            7 => CONSTR_ID,
-            8 => WHITESPACE,
-            9 => EQ,
-            10 => ERROR,
-            11 => ATTRIBUTES,
-            12 => COMMENT,
-            _ => unreachable!(),
-        }
-    }
-
-    let lexer = m_lexer::LexerBuilder::new()
-        .error_token(tok(ERROR))
-        .tokens(&[
-            (tok(L_PAREN), r"\("),
-            (tok(R_PAREN), r"\)"),
-            (tok(PIPE), r"\|"),
-            (tok(Q_MARK), r"\?"),
-            (tok(STAR), r"\*"),
-            (tok(COMMA), r","),
-            (tok(EQ), r"="),
-            (tok(ATTRIBUTES), r"attributes"),
-            (tok(TYPE_ID), r"([a-z][[[:alpha:]]_[0-9]]*)"),
-            (tok(CONSTR_ID), r"([A-Z][[[:alpha:]]_[0-9]]*)"),
-            (tok(WHITESPACE), r"\s+"),
-            (tok(COMMENT), r"//[^\n]*\n+"),
-        ])
-        .build();
-
-    lexer
-        .tokenize(text)
-        .into_iter()
-        .map(|t| (t.len, kind(t.kind)))
-        .scan(0usize, |start_offset, (len, kind)| {
-            let s: SmolStr = text[*start_offset..*start_offset + len].into();
-            *start_offset += len;
-            Some((kind, s))
-        })
-        .collect()
+fn type_id(i: &str) -> IResult<&str, TypeId> {
+    map(
+        recognize(pair(
+            take_while_m_n(1, 1, is_lowercase),
+            take_while(is_alphanumeric_or_underscore),
+        )),
+        TypeId,
+    )(i)
 }
 
-pub(crate) fn parse(text: &str) -> Result<TreeArc<Root>> {
-    let mut tokens = lex(text);
-    tokens.reverse();
-    Ok(Parser { tokens, builder: GreenNodeBuilder::new(), errors: Vec::new() }.parse())
+fn con_id(i: &str) -> IResult<&str, ConstrId> {
+    map(
+        recognize(pair(
+            take_while_m_n(1, 1, is_uppercase),
+            take_while(is_alphanumeric_or_underscore),
+        )),
+        ConstrId,
+    )(i)
+}
+
+fn id(i: &str) -> IResult<&str, Id> {
+    map(
+        recognize(pair(take_while_m_n(1, 1, is_alpha), take_while(is_alphanumeric_or_underscore))),
+        Id,
+    )(i)
+}
+
+fn field_repetition(i: &str) -> IResult<&str, Option<char>> {
+    opt(one_of("*?"))(i)
+}
+
+fn is_alpha(a: char) -> bool {
+    is_alphanumeric(a as u8)
+}
+
+fn is_uppercase(a: char) -> bool {
+    a.is_uppercase()
+}
+
+fn is_lowercase(a: char) -> bool {
+    a.is_lowercase()
+}
+
+pub fn char_ms0<I, E: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, I, E>
+where
+    I: Slice<RangeFrom<usize>>
+        + Slice<RangeTo<usize>>
+        + Offset
+        + InputIter
+        + InputTakeAtPosition
+        + Clone,
+    <I as InputIter>::Item: AsChar + Clone,
+    <I as InputTakeAtPosition>::Item: AsChar + Clone,
+{
+    recognize(tuple((multispace0, char(c), multispace0)))
+}
+
+fn is_alphanumeric_or_underscore(a: char) -> bool {
+    is_alphanumeric(a as u8) || a == '_'
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
-    use insta::assert_snapshot_matches;
+
+    use super::*;
+    use nom;
+    use nom::error::ErrorKind;
+    use nom::Err;
 
     #[test]
-    fn empty_asdl() {
-        let asdl = r"";
-        let root = parser::parse(&asdl).unwrap();
-        assert_snapshot_matches!("empty_asdl", root.debug_dump());
+    fn parse_type_id() {
+        assert_eq!(type_id("aBcd1_Efg"), Ok(("", TypeId("aBcd1_Efg"))));
+        assert_eq!(type_id("aBcd1,Efg"), Ok((",Efg", TypeId("aBcd1"))));
+        assert_eq!(type_id("ABcd1Efg"), Err(Err::Error(("ABcd1Efg", ErrorKind::TakeWhileMN))));
     }
 
     #[test]
-    fn comments() {
-        let asdl = r"
-            // first comment
-            stm = Compound(stm s1, stm* s2)
-                | Single(stm) // second comment
-                  attributes(prodType?)
-            // third comment
-            prodType = (stm s1)
-            ";
-        let root = parser::parse(&asdl).unwrap();
-        assert_snapshot_matches!("comments", root.debug_dump());
+    fn parse_con_id() {
+        assert_eq!(con_id("ABcd1_Efg"), Ok(("", ConstrId("ABcd1_Efg"))));
+        assert_eq!(con_id("ABcd1,Efg"), Ok((",Efg", ConstrId("ABcd1"))));
+        assert_eq!(con_id("aBcd1Efg"), Err(Err::Error(("aBcd1Efg", ErrorKind::TakeWhileMN))));
+    }
+
+    #[test]
+    fn parse_id() {
+        assert_eq!(id("ABcd1_Efg"), Ok(("", Id("ABcd1_Efg"))));
+        assert_eq!(id("ABcd1,Efg"), Ok((",Efg", Id("ABcd1"))));
+        assert_eq!(id("aBcd1_Efg"), Ok(("", Id("aBcd1_Efg"))));
+        assert_eq!(id("aBcd1,Efg"), Ok((",Efg", Id("aBcd1"))));
+        assert_eq!(id("_aBcd1Efg"), Err(Err::Error(("_aBcd1Efg", ErrorKind::TakeWhileMN))));
+    }
+
+    #[test]
+    fn parse_field_repetition() {
+        assert_eq!(field_repetition("? abcd"), Ok((" abcd", Some('?'))));
+        assert_eq!(field_repetition("* abcd"), Ok((" abcd", Some('*'))));
+        assert_eq!(field_repetition(" abcd"), Ok((" abcd", None)));
+    }
+
+    #[test]
+    fn parse_field() {
+        assert_eq!(field("type,"), Ok((",", Single::new(TypeId("type"), None).into())));
+        assert_eq!(field("type?,"), Ok((",", Opt::new(TypeId("type"), None).into())));
+        assert_eq!(field("type*,"), Ok((",", Sequence::new(TypeId("type"), None).into())));
+
+        assert_eq!(
+            field("type  name,"),
+            Ok((",", Single::new(TypeId("type"), Some(Id("name"))).into()))
+        );
+        assert_eq!(
+            field("type?  name,"),
+            Ok((",", Opt::new(TypeId("type"), Some(Id("name"))).into()))
+        );
+        assert_eq!(
+            field("type*  name,"),
+            Ok((",", Sequence::new(TypeId("type"), Some(Id("name"))).into()))
+        );
+    }
+
+    #[test]
+    fn parse_fields() {
+        assert_eq!(
+            fields(" ( type1, type2? name  ) "),
+            Ok((
+                "",
+                vec![
+                    Single::new(TypeId("type1"), None).into(),
+                    Opt::new(TypeId("type2"), Some(Id("name"))).into()
+                ]
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_constructor() {
+        assert_eq!(
+            constructor("ConstrId( type1, type2? name  ) "),
+            Ok((
+                "",
+                Constr::new(
+                    ConstrId("ConstrId"),
+                    vec![
+                        Single::new(TypeId("type1"), None).into(),
+                        Opt::new(TypeId("type2"), Some(Id("name"))).into()
+                    ]
+                )
+            ))
+        );
+
+        assert_eq!(constructor("ConstrId"), Ok(("", Constr::new(ConstrId("ConstrId"), vec![]))));
+    }
+
+    #[test]
+    fn parse_constructors() {
+        assert_eq!(
+            constructors("ConstrId1( type1, type2? name  ) | ConstrId2"),
+            Ok((
+                "",
+                vec![
+                    Constr::new(
+                        ConstrId("ConstrId1"),
+                        vec![
+                            Single::new(TypeId("type1"), None).into(),
+                            Opt::new(TypeId("type2"), Some(Id("name"))).into()
+                        ]
+                    ),
+                    Constr::new(ConstrId("ConstrId2"), vec![])
+                ]
+            ))
+        );
     }
 }

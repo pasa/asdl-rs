@@ -1,93 +1,127 @@
 ---
-created: "2019-07-02T09:34:16.407811459Z"
+created: "2019-08-15T11:58:41.798987386Z"
 creator: insta@0.8.1
 source: src/lib.rs
-expression: root.debug_dump()
+expression: root
 ---
-node Root[0; 173)
-  token WS [0; 13)
-  node SumType[13; 87)
-    node TypeId[13; 16)
-      token `stm` [13; 16)
-    token WS [16; 17)
-    token `=` [17; 18)
-    token WS [18; 19)
-    node Constr[19; 44)
-      node ConstrId[19; 27)
-        token `Compound` [19; 27)
-      token `(` [27; 28)
-      node Single[28; 34)
-        node TypeId[28; 31)
-          token `stm` [28; 31)
-        token WS [31; 32)
-        node Id[32; 34)
-          token `s1` [32; 34)
-      token `,` [34; 35)
-      token WS [35; 36)
-      node Sequence[36; 43)
-        node TypeId[36; 39)
-          token `stm` [36; 39)
-        token `*` [39; 40)
-        token WS [40; 41)
-        node Id[41; 43)
-          token `s2` [41; 43)
-      token `)` [43; 44)
-    token WS [44; 61)
-    token `|` [61; 62)
-    token WS [62; 63)
-    node Constr[63; 74)
-      node ConstrId[63; 69)
-        token `Single` [63; 69)
-      token `(` [69; 70)
-      node Single[70; 73)
-        node TypeId[70; 73)
-          token `stm` [70; 73)
-      token `)` [73; 74)
-    token WS [74; 87)
-  node SumType[87; 128)
-    node TypeId[87; 95)
-      token `noFileds` [87; 95)
-    token WS [95; 96)
-    token `=` [96; 97)
-    token WS [97; 98)
-    node Constr[98; 102)
-      node ConstrId[98; 101)
-        token `One` [98; 101)
-      token WS [101; 102)
-    token `|` [102; 103)
-    token WS [103; 104)
-    node Constr[104; 108)
-      node ConstrId[104; 107)
-        token `Two` [104; 107)
-      token WS [107; 108)
-    token `|` [108; 109)
-    token WS [109; 110)
-    node Constr[110; 128)
-      node ConstrId[110; 115)
-        token `Three` [110; 115)
-      token WS [115; 128)
-  node ProdType[128; 160)
-    node TypeId[128; 136)
-      token `prodType` [128; 136)
-    token WS [136; 137)
-    token `=` [137; 138)
-    token WS [138; 139)
-    token `(` [139; 140)
-    node Opt[140; 151)
-      node TypeId[140; 148)
-        token `noFileds` [140; 148)
-      token `?` [148; 149)
-      token WS [149; 150)
-      node Id[150; 151)
-        token `f` [150; 151)
-    token `,` [151; 152)
-    token WS [152; 153)
-    node Single[153; 159)
-      node TypeId[153; 156)
-        token `stm` [153; 156)
-      token WS [156; 157)
-      node Id[157; 159)
-        token `s1` [157; 159)
-    token `)` [159; 160)
-  token WS [160; 173)
-
+Root {
+    types: [
+        SumType(
+            SumType {
+                type_id: TypeId(
+                    "stm",
+                ),
+                constructors: [
+                    Constr {
+                        id: ConstrId(
+                            "Compound",
+                        ),
+                        fields: [
+                            Single(
+                                Single {
+                                    type_id: TypeId(
+                                        "stm",
+                                    ),
+                                    id: Some(
+                                        Id(
+                                            "s1",
+                                        ),
+                                    ),
+                                },
+                            ),
+                            Sequence(
+                                Sequence {
+                                    type_id: TypeId(
+                                        "stm",
+                                    ),
+                                    id: Some(
+                                        Id(
+                                            "s2",
+                                        ),
+                                    ),
+                                },
+                            ),
+                        ],
+                    },
+                    Constr {
+                        id: ConstrId(
+                            "Single",
+                        ),
+                        fields: [
+                            Single(
+                                Single {
+                                    type_id: TypeId(
+                                        "stm",
+                                    ),
+                                    id: None,
+                                },
+                            ),
+                        ],
+                    },
+                ],
+                attrs: None,
+            },
+        ),
+        SumType(
+            SumType {
+                type_id: TypeId(
+                    "noFileds",
+                ),
+                constructors: [
+                    Constr {
+                        id: ConstrId(
+                            "One",
+                        ),
+                        fields: [],
+                    },
+                    Constr {
+                        id: ConstrId(
+                            "Two",
+                        ),
+                        fields: [],
+                    },
+                    Constr {
+                        id: ConstrId(
+                            "Three",
+                        ),
+                        fields: [],
+                    },
+                ],
+                attrs: None,
+            },
+        ),
+        ProdType(
+            ProdType {
+                type_id: TypeId(
+                    "prodType",
+                ),
+                fields: [
+                    Opt(
+                        Opt {
+                            type_id: TypeId(
+                                "noFileds",
+                            ),
+                            id: Some(
+                                Id(
+                                    "f",
+                                ),
+                            ),
+                        },
+                    ),
+                    Single(
+                        Single {
+                            type_id: TypeId(
+                                "stm",
+                            ),
+                            id: Some(
+                                Id(
+                                    "s1",
+                                ),
+                            ),
+                        },
+                    ),
+                ],
+            },
+        ),
+    ],
+}

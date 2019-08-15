@@ -5,7 +5,6 @@ use std::{
     process::{Command, Output, Stdio},
 };
 
-
 use term;
 use difference::{Difference, Changeset};
 

@@ -1,48 +1,91 @@
 {%- macro type(ty) -%}
 {% set type_name = ty.id | camel %}
 #[derive(PartialEq, Eq, Hash, Debug)]
-#[repr(transparent)]
-pub(crate) struct {{type_name}}(SyntaxNode);
-
-unsafe impl TransparentNewType for {{type_name}} {
-    type Repr = rowan::SyntaxNode;
+pub(crate) struct {{type_name}}<'a> {
+    {%- for f in ty.fields %}
+    {{ self::field(f = f) }},
+    {%- endfor %}
 }
 
-impl {{type_name}} {
-    {% for f in ty.fields %}
-    {% if f.is_option -%}
-    #[allow(unused)]
-    pub(crate) fn {{f.id | snake}}(&self) -> Option<&{{f.type_id | camel}}> {
-        self.0.children().find_map({{f.type_id | camel}}::cast)
-    }
-    {% elif f.is_sequence -%}
-    #[allow(unused)]
-    pub(crate) fn {{f.id | snake}}(&self) -> impl Iterator<Item = &{{f.type_id | camel}}> {
-        self.0.children().filter_map({{f.type_id | camel}}::cast)
-    }
-    {% else -%}
-    #[allow(unused)]
-    pub(crate) fn {{f.id | snake}}(&self) -> &{{f.type_id | camel}} {
-        self.0.children().find_map({{f.type_id | camel}}::cast).unwrap()
-    }
-    {% endif -%}
-    {% endfor %}
-    #[allow(unused)]
-    pub(crate) fn cast(syntax: &SyntaxNode) -> Option<&Self> {
-        match syntax.kind() {
-            {{ ty.id | SCREAM }} => Some({{ type_name }}::from_repr(syntax.into_repr())),
-            _ => None,
-        }
-    }
+impl<'a> {{type_name}}<'a> {
 
-    #[allow(unused)]
-    pub(crate) fn to_owned(&self) -> TreeArc<Self> {
-        TreeArc::cast(self.0.to_owned())
+    pub(crate) fn new({{ self::args(fs = ty.fields) }}) -> Self {
+        {{type_name}}{ {{ self::names(fs = ty.fields) }} }
     }
+    {%- for f in ty.fields %}
+    {{ self::method(f = f) }}
+    {%- endfor %}
+}
+{%- endmacro type -%}
 
-    #[allow(unused)]
-    pub(crate) fn syntax(&self) -> &SyntaxNode {
-        &self.0
+{%- macro names(fs) -%}
+{% for f in fs -%}
+{{ f.id | snake  }}
+{%- if not loop.last -%}, {% endif -%}
+{%- endfor -%}
+{%- endmacro args -%}
+
+{%- macro args(fs) -%}
+{% for f in fs -%}
+{{ self::field(f = f) }}
+{%- if not loop.last -%}, {% endif -%}
+{%- endfor -%}
+{%- endmacro args -%}
+
+{%- macro field(f) -%}
+{%- set field_name = f.id | snake -%}
+    {{field_name}}: {{ self::field_type(f = f) }}
+{%- endmacro field -%}
+
+{%- macro field_type(f) -%}
+{%- set type_name = f.type_id | camel -%}
+    {%- if f.is_option -%}
+    Option<{{type_name}}<'a>>
+    {%- elif f.is_sequence -%}
+    Vec<{{type_name}}<'a>>
+    {%- elif f.type_id == 'str' -%}
+    {{f.type_id}}
+    {%- else -%}
+    {{type_name}}<'a>
+    {%- endif -%}
+{%- endmacro field -%}
+
+{%- macro method(f) -%}
+{%- set method_name = f.id | snake -%}
+{%- set type_name = f.type_id | camel -%}
+{%- set field_name = f.id | snake -%}
+    {%- if f.is_option %}
+    #[allow(dead_code)]
+    pub(crate) fn {{method_name}}(&self) -> &Option<{{type_name}}> {
+        &self.{{field_name}}
+    }
+    {%- elif f.is_sequence %}
+    #[allow(dead_code)]
+    pub(crate) fn {{method_name}}(&self) -> impl Iterator<Item = &{{type_name}}> {
+        self.{{field_name}}.iter()
+    }
+    {%- else %}
+    #[allow(dead_code)]
+    pub(crate) fn {{method_name}}(&self) -> &{{type_name}} {
+        &self.{{field_name}}
+    }
+    {%- endif -%}
+{%- endmacro type -%}
+
+{%- macro id_type(ty) -%}
+{%- set type_name = ty.id | camel -%}
+{%- set filed = ty.fields.0 -%}
+{%- set field_type = self::field_type(f = filed) -%}
+{%- set method_name = filed.id | snake -%}
+#[derive(PartialEq, Eq, Hash, Debug)]
+pub(crate) struct {{type_name}}<'a>(pub(super) &'a {{ field_type }});
+
+impl<'a> {{type_name}}<'a> {
+
+    #[allow(dead_code)]
+    pub(crate) fn {{method_name}}(&self) -> &{{field_type}} {
+        self.0
     }
 }
 {%- endmacro type -%}
+

@@ -1,69 +1,79 @@
 ---
-created: "2019-07-09T10:46:15.657691214Z"
+created: "2019-08-15T12:02:38.034816140Z"
 creator: insta@0.8.1
 source: src/lib.rs
 expression: model
 ---
 Asdl {
-    sum_types: [
-        SumType {
-            id: "stm",
-            constructors: [
-                Constructor {
-                    id: "Compound",
-                    fields: [
-                        Field {
-                            id: "s1",
-                            type_id: "stm",
-                            is_single: true,
-                            is_option: false,
-                            is_sequence: false,
-                        },
-                        Field {
-                            id: "s2",
-                            type_id: "stm",
-                            is_single: false,
-                            is_option: false,
-                            is_sequence: true,
-                        },
-                    ],
-                },
-                Constructor {
-                    id: "Single",
-                    fields: [
-                        Field {
-                            id: "stm",
-                            type_id: "stm",
-                            is_single: true,
-                            is_option: false,
-                            is_sequence: false,
-                        },
-                    ],
-                },
-            ],
-            attributes: [
-                Field {
-                    id: "prodType",
-                    type_id: "prodType",
-                    is_single: false,
-                    is_option: true,
-                    is_sequence: false,
-                },
-            ],
-        },
-    ],
+    types: {
+        "stm": SumType(
+            SumType {
+                id: "stm",
+                constructors: [
+                    Constructor {
+                        id: "Compound",
+                        fields: [
+                            Field {
+                                id: "s1",
+                                type_id: "stm",
+                                is_single: true,
+                                is_option: false,
+                                is_sequence: false,
+                            },
+                            Field {
+                                id: "s2",
+                                type_id: "stm",
+                                is_single: false,
+                                is_option: false,
+                                is_sequence: true,
+                            },
+                        ],
+                    },
+                    Constructor {
+                        id: "Single",
+                        fields: [
+                            Field {
+                                id: "stm",
+                                type_id: "stm",
+                                is_single: true,
+                                is_option: false,
+                                is_sequence: false,
+                            },
+                        ],
+                    },
+                ],
+                attributes: [
+                    Field {
+                        id: "prodType",
+                        type_id: "prodType",
+                        is_single: false,
+                        is_option: true,
+                        is_sequence: false,
+                    },
+                ],
+                is_prod_type: false,
+            },
+        ),
+        "prodType": ProdType(
+            ProdType {
+                id: "prodType",
+                fields: [
+                    Field {
+                        id: "s1",
+                        type_id: "stm",
+                        is_single: true,
+                        is_option: false,
+                        is_sequence: false,
+                    },
+                ],
+                is_prod_type: true,
+            },
+        ),
+    },
     prod_types: [
-        ProdType {
-            id: "prodType",
-            fields: [
-                Field {
-                    id: "s1",
-                    type_id: "stm",
-                    is_single: true,
-                    is_option: false,
-                    is_sequence: false,
-                },
-            ],
-        },
+        "prodType",
+    ],
+    sum_types: [
+        "stm",
     ],
 }
