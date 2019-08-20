@@ -1,0 +1,14 @@
+[package]
+authors = ["Sergey Parilin <parilinsa@gmail.com>"]
+edition = "2018"
+name = "asdl_tests"
+version = "0.1.0"
+
+[dependencies]
+asdl_tera = { path = "../asdl_tera" }
+
+
+[dev-dependencies]
+difference = "2.0"
+term = "0.5.2"
+

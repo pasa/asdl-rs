@@ -5,9 +5,9 @@ use crate::parser;
 
 #[derive(Serialize, Debug)]
 pub struct Asdl {
-    types: FxHashMap<String, Type>,
-    prod_types: Vec<String>,
-    sum_types: Vec<String>,
+    pub types: FxHashMap<String, Type>,
+    pub prod_types: Vec<String>,
+    pub sum_types: Vec<String>,
 }
 
 impl Asdl {
@@ -27,7 +27,7 @@ impl Asdl {
 
 #[derive(Serialize, Debug)]
 #[serde(untagged)]
-pub(crate) enum Type {
+pub enum Type {
     SumType(SumType),
     ProdType(ProdType),
 }
@@ -60,7 +60,7 @@ fn ty(ty: &parser::Type) -> Type {
 }
 
 #[derive(Serialize, Debug)]
-pub(crate) struct SumType {
+pub struct SumType {
     id: String,
     constructors: Vec<Constructor>,
     attributes: Vec<Field>,
@@ -86,7 +86,7 @@ fn sum_type(ty: &parser::SumType) -> SumType {
 }
 
 #[derive(Serialize, Debug)]
-pub(crate) struct Constructor {
+pub struct Constructor {
     id: String,
     fields: Vec<Field>,
 }
@@ -104,7 +104,7 @@ fn constr(c: &parser::Constr) -> Constructor {
 }
 
 #[derive(Serialize, Debug)]
-pub(crate) struct ProdType {
+pub struct ProdType {
     id: String,
     fields: Vec<Field>,
     is_prod_type: bool, //always true
@@ -123,7 +123,7 @@ fn prod_type(ty: &parser::ProdType) -> ProdType {
 }
 
 #[derive(Serialize, Debug)]
-pub(crate) struct Field {
+pub struct Field {
     id: String,
     type_id: String,
     is_single: bool,

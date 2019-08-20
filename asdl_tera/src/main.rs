@@ -2,8 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use clap::{App, Arg};
-
-use asdl_rs::{generate, Result};
+use asdl_tera::{generate, Result};
 
 fn main() -> Result<()> {
     let matches = App::new("Asdl generator")
