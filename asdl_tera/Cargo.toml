@@ -9,3 +9,9 @@ asdl = { path = "../asdl" }
 clap = "2.33.0"
 heck = "0.3.1"
 tera = "0.11.20"
+rustc-hash = "1.0.1"
+
+[dependencies.serde]
+features = ["derive"]
+version = "1.0.91"
+

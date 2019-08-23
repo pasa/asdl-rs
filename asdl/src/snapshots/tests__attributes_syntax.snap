@@ -1,7 +1,7 @@
 ---
-created: "2019-08-15T12:01:28.045817900Z"
+created: "2019-08-23T11:43:53.303056243Z"
 creator: insta@0.8.1
-source: src/lib.rs
+source: asdl/src/lib.rs
 expression: root
 ---
 Root {
@@ -17,8 +17,8 @@ Root {
                             "Compound",
                         ),
                         fields: [
-                            Single(
-                                Single {
+                            Required(
+                                Required {
                                     type_id: TypeId(
                                         "stm",
                                     ),
@@ -29,8 +29,8 @@ Root {
                                     ),
                                 },
                             ),
-                            Sequence(
-                                Sequence {
+                            Repeated(
+                                Repeated {
                                     type_id: TypeId(
                                         "stm",
                                     ),
@@ -48,8 +48,8 @@ Root {
                             "Single",
                         ),
                         fields: [
-                            Single(
-                                Single {
+                            Required(
+                                Required {
                                     type_id: TypeId(
                                         "stm",
                                     ),
@@ -62,8 +62,8 @@ Root {
                 attrs: Some(
                     Attrs {
                         fields: [
-                            Opt(
-                                Opt {
+                            Optional(
+                                Optional {
                                     type_id: TypeId(
                                         "prodType",
                                     ),
@@ -81,8 +81,8 @@ Root {
                     "prodType",
                 ),
                 fields: [
-                    Single(
-                        Single {
+                    Required(
+                        Required {
                             type_id: TypeId(
                                 "stm",
                             ),

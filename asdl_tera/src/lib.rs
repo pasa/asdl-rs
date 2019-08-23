@@ -1,3 +1,6 @@
+pub mod model;
+mod model_impl;
+
 use std::path::Path;
 use std::error::Error;
 use std::fmt;
@@ -51,7 +54,8 @@ impl From<std::io::Error> for AsdlTeraError {
 }
 
 pub fn generate<P: AsRef<Path>>(asdl: &str, templates: &Vec<P>) -> Result<String> {
-    let model = asdl::model(asdl)?;
+    let ast = asdl::ast(asdl)?;
+    let model = model::Asdl::new(&ast);
     let mut tera = Tera::default();
     tera.register_filter("camel", |arg, _| Ok(arg.as_str().unwrap().to_camel_case().into()));
     tera.register_filter("snake", |arg, _| Ok(arg.as_str().unwrap().to_snake_case().into()));

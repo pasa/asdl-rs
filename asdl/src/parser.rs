@@ -1,8 +1,7 @@
-mod generated;
-
 use nom::IResult;
 use std::str;
-pub(crate) use generated::*;
+
+use super::ast::*;
 
 use std::ops::{RangeFrom, RangeTo};
 
@@ -74,12 +73,12 @@ fn field(i: &str) -> IResult<&str, Field> {
     let name = name.map(|n| n.1);
     if let Some(rep) = rep {
         match rep {
-            '*' => Ok((i, Sequence::new(type_id, name).into())),
-            '?' => Ok((i, Opt::new(type_id, name).into())),
+            '*' => Ok((i, Repeated::new(type_id, name).into())),
+            '?' => Ok((i, Optional::new(type_id, name).into())),
             _ => unreachable!(),
         }
     } else {
-        Ok((i, Single::new(type_id, name).into()))
+        Ok((i, Required::new(type_id, name).into()))
     }
 }
 
@@ -184,21 +183,21 @@ mod tests {
 
     #[test]
     fn parse_field() {
-        assert_eq!(field("type,"), Ok((",", Single::new(TypeId("type"), None).into())));
-        assert_eq!(field("type?,"), Ok((",", Opt::new(TypeId("type"), None).into())));
-        assert_eq!(field("type*,"), Ok((",", Sequence::new(TypeId("type"), None).into())));
+        assert_eq!(field("type,"), Ok((",", Required::new(TypeId("type"), None).into())));
+        assert_eq!(field("type?,"), Ok((",", Optional::new(TypeId("type"), None).into())));
+        assert_eq!(field("type*,"), Ok((",", Repeated::new(TypeId("type"), None).into())));
 
         assert_eq!(
             field("type  name,"),
-            Ok((",", Single::new(TypeId("type"), Some(Id("name"))).into()))
+            Ok((",", Required::new(TypeId("type"), Some(Id("name"))).into()))
         );
         assert_eq!(
             field("type?  name,"),
-            Ok((",", Opt::new(TypeId("type"), Some(Id("name"))).into()))
+            Ok((",", Optional::new(TypeId("type"), Some(Id("name"))).into()))
         );
         assert_eq!(
             field("type*  name,"),
-            Ok((",", Sequence::new(TypeId("type"), Some(Id("name"))).into()))
+            Ok((",", Repeated::new(TypeId("type"), Some(Id("name"))).into()))
         );
     }
 
@@ -209,8 +208,8 @@ mod tests {
             Ok((
                 "",
                 vec![
-                    Single::new(TypeId("type1"), None).into(),
-                    Opt::new(TypeId("type2"), Some(Id("name"))).into()
+                    Required::new(TypeId("type1"), None).into(),
+                    Optional::new(TypeId("type2"), Some(Id("name"))).into()
                 ]
             ))
         );
@@ -225,8 +224,8 @@ mod tests {
                 Constr::new(
                     ConstrId("ConstrId"),
                     vec![
-                        Single::new(TypeId("type1"), None).into(),
-                        Opt::new(TypeId("type2"), Some(Id("name"))).into()
+                        Required::new(TypeId("type1"), None).into(),
+                        Optional::new(TypeId("type2"), Some(Id("name"))).into()
                     ]
                 )
             ))
@@ -245,8 +244,8 @@ mod tests {
                     Constr::new(
                         ConstrId("ConstrId1"),
                         vec![
-                            Single::new(TypeId("type1"), None).into(),
-                            Opt::new(TypeId("type2"), Some(Id("name"))).into()
+                            Required::new(TypeId("type1"), None).into(),
+                            Optional::new(TypeId("type2"), Some(Id("name"))).into()
                         ]
                     ),
                     Constr::new(ConstrId("ConstrId2"), vec![])

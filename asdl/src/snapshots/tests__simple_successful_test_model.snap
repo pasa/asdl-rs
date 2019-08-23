@@ -1,12 +1,12 @@
 ---
-created: "2019-08-15T11:59:42.303743849Z"
+created: "2019-08-23T11:44:40.800337071Z"
 creator: insta@0.8.1
-source: src/lib.rs
+source: asdl/src/lib.rs
 expression: model
 ---
 Asdl {
-    types: {
-        "stm": SumType(
+    types: [
+        SumType(
             SumType {
                 id: "stm",
                 constructors: [
@@ -16,16 +16,12 @@ Asdl {
                             Field {
                                 id: "s1",
                                 type_id: "stm",
-                                is_single: true,
-                                is_option: false,
-                                is_sequence: false,
+                                arity: Required,
                             },
                             Field {
                                 id: "s2",
                                 type_id: "stm",
-                                is_single: false,
-                                is_option: false,
-                                is_sequence: true,
+                                arity: Repeated,
                             },
                         ],
                     },
@@ -35,18 +31,15 @@ Asdl {
                             Field {
                                 id: "stm",
                                 type_id: "stm",
-                                is_single: true,
-                                is_option: false,
-                                is_sequence: false,
+                                arity: Required,
                             },
                         ],
                     },
                 ],
                 attributes: [],
-                is_prod_type: false,
             },
         ),
-        "noFileds": SumType(
+        SumType(
             SumType {
                 id: "noFileds",
                 constructors: [
@@ -64,37 +57,24 @@ Asdl {
                     },
                 ],
                 attributes: [],
-                is_prod_type: false,
             },
         ),
-        "prodType": ProdType(
+        ProdType(
             ProdType {
                 id: "prodType",
                 fields: [
                     Field {
                         id: "f",
                         type_id: "noFileds",
-                        is_single: false,
-                        is_option: true,
-                        is_sequence: false,
+                        arity: Optional,
                     },
                     Field {
                         id: "s1",
                         type_id: "stm",
-                        is_single: true,
-                        is_option: false,
-                        is_sequence: false,
+                        arity: Required,
                     },
                 ],
-                is_prod_type: true,
             },
         ),
-    },
-    prod_types: [
-        "prodType",
-    ],
-    sum_types: [
-        "stm",
-        "noFileds",
     ],
 }

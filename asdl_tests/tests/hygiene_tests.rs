@@ -13,10 +13,10 @@ fn check_code_formatting() {
     }
 }
 
-const TEMPLATE: &str = "asdl/src/parser/generated.rs.tera";
-const MACROS: &str = "asdl/src/parser/macros.tera";
-const ASDL: &str = "asdl/src/parser/parser.asdl";
-const GENERATED: &str = "asdl/src/parser/generated.rs";
+const TEMPLATE: &str = "asdl/src/ast/generated.rs.tera";
+const MACROS: &str = "asdl/src/ast/macros.tera";
+const ASDL: &str = "asdl/src/ast/parser.asdl";
+const GENERATED: &str = "asdl/src/ast/generated.rs";
 
 #[test]
 fn check_syntax_is_fresh() {

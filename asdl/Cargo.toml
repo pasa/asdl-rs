@@ -12,9 +12,5 @@ version = "5"
 default-features = false
 features = ["std"]
 
-[dependencies.serde]
-features = ["derive"]
-version = "1.0.91"
-
 [dev-dependencies]
 insta = "0.8.1"

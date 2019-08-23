@@ -1,27 +1,18 @@
-#[derive(Debug)]
+use rustc_hash::FxHashMap;
+use serde::Serialize;
+
+#[derive(Serialize, Debug)]
 pub struct Asdl {
-    pub types: Vec<Type>,
+    pub types: FxHashMap<String, Type>,
+    pub prod_types: Vec<String>,
+    pub sum_types: Vec<String>,
 }
 
-impl Asdl {
-    pub fn get_type_by_name(&self, name: &str) -> Option<&Type> {
-        self.types.iter().find(|t| t.id() == name)
-    }
-}
-
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
+#[serde(untagged)]
 pub enum Type {
     SumType(SumType),
     ProdType(ProdType),
-}
-
-impl Type {
-    fn id(&self) -> String {
-        match self {
-            Type::SumType(sty) => sty.id.clone(),
-            Type::ProdType(pty) => pty.id.clone(),
-        }
-    }
 }
 
 impl From<SumType> for Type {
@@ -35,35 +26,32 @@ impl From<ProdType> for Type {
     }
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
 pub struct SumType {
     pub id: String,
     pub constructors: Vec<Constructor>,
     pub attributes: Vec<Field>,
+    pub is_prod_type: bool, //always false
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
 pub struct Constructor {
     pub id: String,
     pub fields: Vec<Field>,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
 pub struct ProdType {
     pub id: String,
     pub fields: Vec<Field>,
+    pub is_prod_type: bool, //always true
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
 pub struct Field {
     pub id: String,
     pub type_id: String,
-    pub arity: Arity,
-}
-
-#[derive(Debug)]
-pub enum Arity {
-    Optional,
-    Required,
-    Repeated,
+    pub is_single: bool,
+    pub is_option: bool,
+    pub is_sequence: bool,
 }
