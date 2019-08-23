@@ -7,13 +7,13 @@ impl Asdl {
     pub(crate) fn new(root: &ast::Root) -> Self {
         let mut prod_types = Vec::new();
         let mut sum_types = Vec::new();
-        for ty in root.types() {
+        for ty in root.types.iter() {
             match ty {
-                ast::Type::SumType(sty) => sum_types.push(sty.type_id().id().to_string()),
-                ast::Type::ProdType(pty) => prod_types.push(pty.type_id().id().to_string()),
+                ast::Type::SumType(sty) => sum_types.push(sty.type_id.to_string()),
+                ast::Type::ProdType(pty) => prod_types.push(pty.type_id.to_string()),
             }
         }
-        let types = root.types().map(ty).map(|t| (t.id(), t)).collect();
+        let types = root.types.iter().map(ty).map(|t| (t.id(), t)).collect();
         Asdl { types, prod_types, sum_types }
     }
 }
@@ -41,11 +41,11 @@ impl SumType {
 }
 
 fn sum_type(ty: &ast::SumType) -> SumType {
-    let id = ty.type_id().id().to_string();
-    let constructors = ty.constructors().map(constr).collect();
-    let attributes = if let Some(attrs) = ty.attrs() {
+    let id = ty.type_id.to_string();
+    let constructors = ty.constructors.iter().map(constr).collect();
+    let attributes = if let Some(attrs) = &ty.attrs {
         let mut names = FieldNames::default();
-        attrs.fields().map(|f| field(f, &mut names)).collect()
+        attrs.fields.iter().map(|f| field(f, &mut names)).collect()
     } else {
         vec![]
     };
@@ -60,8 +60,8 @@ impl Constructor {
 
 fn constr(c: &ast::Constr) -> Constructor {
     let mut names = FieldNames::default();
-    let fields: Vec<Field> = c.fields().map(|f| field(f, &mut names)).collect();
-    Constructor::new(c.id().id().to_string(), fields)
+    let fields: Vec<Field> = c.fields.iter().map(|f| field(f, &mut names)).collect();
+    Constructor::new(c.id.to_string(), fields)
 }
 
 impl ProdType {
@@ -72,35 +72,34 @@ impl ProdType {
 
 fn prod_type(ty: &ast::ProdType) -> ProdType {
     let mut names = FieldNames::default();
-    let fields: Vec<Field> = ty.fields().map(|f| field(f, &mut names)).collect();
-    ProdType::new(ty.type_id().id().to_string(), fields)
+    let fields: Vec<Field> = ty.fields.iter().map(|f| field(f, &mut names)).collect();
+    ProdType::new(ty.type_id.to_string(), fields)
 }
 
 impl Field {
-    fn single(id: String, type_id: String) -> Self {
-        Field { id, type_id, is_single: true, is_option: false, is_sequence: false }
+    fn required(id: String, type_id: String) -> Self {
+        Field { id, type_id, is_required: true, is_optional: false, is_repeated: false }
     }
 
-    fn option(id: String, type_id: String) -> Self {
-        Field { id, type_id, is_single: false, is_option: true, is_sequence: false }
+    fn optional(id: String, type_id: String) -> Self {
+        Field { id, type_id, is_required: false, is_optional: true, is_repeated: false }
     }
 
-    fn sequence(id: String, type_id: String) -> Self {
-        Field { id, type_id, is_single: false, is_option: false, is_sequence: true }
+    fn repeated(id: String, type_id: String) -> Self {
+        Field { id, type_id, is_required: false, is_optional: false, is_repeated: true }
     }
 }
 
 fn field(f: &ast::Field, names: &mut FieldNames) -> Field {
     match f {
         ast::Field::Required(f) => {
-            Field::single(names.get_or_generate(f.id(), f.type_id()), f.type_id().id().to_string())
+            Field::required(names.get_or_generate(&f.id, &f.type_id), f.type_id.to_string())
         }
         ast::Field::Optional(f) => {
-            Field::option(names.get_or_generate(f.id(), f.type_id()), f.type_id().id().to_string())
+            Field::optional(names.get_or_generate(&f.id, &f.type_id), f.type_id.to_string())
         }
-        ast::Field::Repeated(f) => Field::sequence(
-            names.get_or_generate(f.id(), f.type_id()),
-            f.type_id().id().to_string(),
-        ),
+        ast::Field::Repeated(f) => {
+            Field::repeated(names.get_or_generate(&f.id, &f.type_id), f.type_id.to_string())
+        }
     }
 }

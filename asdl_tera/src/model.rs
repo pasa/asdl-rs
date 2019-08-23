@@ -51,7 +51,7 @@ pub struct ProdType {
 pub struct Field {
     pub id: String,
     pub type_id: String,
-    pub is_single: bool,
-    pub is_option: bool,
-    pub is_sequence: bool,
+    pub is_required: bool,
+    pub is_optional: bool,
+    pub is_repeated: bool,
 }

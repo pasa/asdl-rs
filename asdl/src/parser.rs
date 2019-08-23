@@ -68,8 +68,7 @@ fn fields(i: &str) -> IResult<&str, Vec<Field>> {
 }
 
 fn field(i: &str) -> IResult<&str, Field> {
-    let (i, (type_id, rep, name)) =
-        tuple((type_id, field_repetition, opt(pair(multispace1, id))))(i)?;
+    let (i, (type_id, rep, name)) = tuple((type_id, field_arity, opt(pair(multispace1, id))))(i)?;
     let name = name.map(|n| n.1);
     if let Some(rep) = rep {
         match rep {
@@ -109,7 +108,7 @@ fn id(i: &str) -> IResult<&str, Id> {
     )(i)
 }
 
-fn field_repetition(i: &str) -> IResult<&str, Option<char>> {
+fn field_arity(i: &str) -> IResult<&str, Option<char>> {
     opt(one_of("*?"))(i)
 }
 
@@ -175,10 +174,10 @@ mod tests {
     }
 
     #[test]
-    fn parse_field_repetition() {
-        assert_eq!(field_repetition("? abcd"), Ok((" abcd", Some('?'))));
-        assert_eq!(field_repetition("* abcd"), Ok((" abcd", Some('*'))));
-        assert_eq!(field_repetition(" abcd"), Ok((" abcd", None)));
+    fn parse_field_arity() {
+        assert_eq!(field_arity("? abcd"), Ok((" abcd", Some('?'))));
+        assert_eq!(field_arity("* abcd"), Ok((" abcd", Some('*'))));
+        assert_eq!(field_arity(" abcd"), Ok((" abcd", None)));
     }
 
     #[test]

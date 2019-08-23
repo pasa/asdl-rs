@@ -11,9 +11,9 @@ pub struct FieldNames {
 impl FieldNames {
     pub fn get_or_generate(&mut self, id: &Option<ast::Id>, type_id: &ast::TypeId) -> String {
         match id {
-            Option::Some(id) => id.id().to_string(),
+            Option::Some(id) => id.to_string(),
             Option::None => {
-                let type_id = type_id.id();
+                let type_id = type_id.to_string();
                 let index = self.names_indexes.entry(type_id.to_string()).or_insert(0);
                 let res = if *index == 0 {
                     type_id.to_string()

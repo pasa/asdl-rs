@@ -6,15 +6,11 @@ pub struct {{type_name}}<'a> {
     {{ self::field(f = f) }},
     {%- endfor %}
 }
-
 impl<'a> {{type_name}}<'a> {
 
-    pub fn new({{ self::args(fs = ty.fields) }}) -> Self {
+    pub(crate) fn new({{ self::args(fs = ty.fields) }}) -> Self {
         {{type_name}}{ {{ self::names(fs = ty.fields) }} }
     }
-    {%- for f in ty.fields %}
-    {{ self::method(f = f) }}
-    {%- endfor %}
 }
 {%- endmacro type -%}
 
@@ -27,21 +23,26 @@ impl<'a> {{type_name}}<'a> {
 
 {%- macro args(fs) -%}
 {% for f in fs -%}
-{{ self::field(f = f) }}
+{{ self::arg(f = f) }}
 {%- if not loop.last -%}, {% endif -%}
 {%- endfor -%}
 {%- endmacro args -%}
 
-{%- macro field(f) -%}
+{%- macro arg(f) -%}
 {%- set field_name = f.id | snake -%}
     {{field_name}}: {{ self::field_type(f = f) }}
 {%- endmacro field -%}
 
+{%- macro field(f) -%}
+{%- set field_name = f.id | snake -%}
+    pub {{field_name}}: {{ self::field_type(f = f) }}
+{%- endmacro field -%}
+
 {%- macro field_type(f) -%}
 {%- set type_name = f.type_id | camel -%}
-    {%- if f.is_option -%}
+    {%- if f.is_optional -%}
     Option<{{type_name}}<'a>>
-    {%- elif f.is_sequence -%}
+    {%- elif f.is_repeated -%}
     Vec<{{type_name}}<'a>>
     {%- elif f.type_id == 'str' -%}
     {{f.type_id}}
@@ -50,41 +51,20 @@ impl<'a> {{type_name}}<'a> {
     {%- endif -%}
 {%- endmacro field -%}
 
-{%- macro method(f) -%}
-{%- set method_name = f.id | snake -%}
-{%- set type_name = f.type_id | camel -%}
-{%- set field_name = f.id | snake -%}
-    {%- if f.is_option %}
-    #[allow(dead_code)]
-    pub fn {{method_name}}(&self) -> &Option<{{type_name}}> {
-        &self.{{field_name}}
-    }
-    {%- elif f.is_sequence %}
-    #[allow(dead_code)]
-    pub fn {{method_name}}(&self) -> impl Iterator<Item = &{{type_name}}> {
-        self.{{field_name}}.iter()
-    }
-    {%- else %}
-    #[allow(dead_code)]
-    pub fn {{method_name}}(&self) -> &{{type_name}} {
-        &self.{{field_name}}
-    }
-    {%- endif -%}
-{%- endmacro type -%}
-
 {%- macro id_type(ty) -%}
 {%- set type_name = ty.id | camel -%}
 {%- set filed = ty.fields.0 -%}
 {%- set field_type = self::field_type(f = filed) -%}
 {%- set method_name = filed.id | snake -%}
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct {{type_name}}<'a>(pub &'a {{ field_type }});
+pub struct {{type_name}}<'a>(pub(crate) &'a {{ field_type }});
 
-impl<'a> {{type_name}}<'a> {
+
+impl<'a> ToString for {{type_name}}<'a> {
 
     #[allow(dead_code)]
-    pub fn {{method_name}}(&self) -> &{{field_type}} {
-        self.0
+    fn to_string(&self) -> String {
+        self.0.to_string()
     }
 }
 {%- endmacro type -%}

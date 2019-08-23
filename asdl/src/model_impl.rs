@@ -4,7 +4,7 @@ use crate::util::FieldNames;
 
 impl Asdl {
     pub fn new(root: &ast::Root) -> Self {
-        Asdl { types: root.types().map(ty).collect() }
+        Asdl { types: root.types.iter().map(ty).collect() }
     }
 }
 
@@ -22,11 +22,11 @@ impl SumType {
 }
 
 fn sum_type(ty: &ast::SumType) -> SumType {
-    let id = ty.type_id().id().to_string();
-    let constructors = ty.constructors().map(constr).collect();
-    let attributes = if let Some(attrs) = ty.attrs() {
+    let id = ty.type_id.to_string();
+    let constructors = ty.constructors.iter().map(constr).collect();
+    let attributes = if let Some(attrs) = &ty.attrs {
         let mut names = FieldNames::default();
-        attrs.fields().map(|f| field(f, &mut names)).collect()
+        attrs.fields.iter().map(|f| field(f, &mut names)).collect()
     } else {
         vec![]
     };
@@ -41,8 +41,8 @@ impl Constructor {
 
 fn constr(c: &ast::Constr) -> Constructor {
     let mut names = FieldNames::default();
-    let fields: Vec<Field> = c.fields().map(|f| field(f, &mut names)).collect();
-    Constructor::new(c.id().id().to_string(), fields)
+    let fields: Vec<Field> = c.fields.iter().map(|f| field(f, &mut names)).collect();
+    Constructor::new(c.id.to_string(), fields)
 }
 
 impl ProdType {
@@ -53,8 +53,8 @@ impl ProdType {
 
 fn prod_type(ty: &ast::ProdType) -> ProdType {
     let mut names = FieldNames::default();
-    let fields: Vec<Field> = ty.fields().map(|f| field(f, &mut names)).collect();
-    ProdType::new(ty.type_id().id().to_string(), fields)
+    let fields: Vec<Field> = ty.fields.iter().map(|f| field(f, &mut names)).collect();
+    ProdType::new(ty.type_id.to_string(), fields)
 }
 
 impl Field {
@@ -73,17 +73,14 @@ impl Field {
 
 fn field(f: &ast::Field, names: &mut FieldNames) -> Field {
     match f {
-        ast::Field::Required(f) => Field::required(
-            names.get_or_generate(f.id(), f.type_id()),
-            f.type_id().id().to_string(),
-        ),
-        ast::Field::Optional(f) => Field::optional(
-            names.get_or_generate(f.id(), f.type_id()),
-            f.type_id().id().to_string(),
-        ),
-        ast::Field::Repeated(f) => Field::repeated(
-            names.get_or_generate(f.id(), f.type_id()),
-            f.type_id().id().to_string(),
-        ),
+        ast::Field::Required(f) => {
+            Field::required(names.get_or_generate(&f.id, &f.type_id), f.type_id.to_string())
+        }
+        ast::Field::Optional(f) => {
+            Field::optional(names.get_or_generate(&f.id, &f.type_id), f.type_id.to_string())
+        }
+        ast::Field::Repeated(f) => {
+            Field::repeated(names.get_or_generate(&f.id, &f.type_id), f.type_id.to_string())
+        }
     }
 }

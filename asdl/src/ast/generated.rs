@@ -24,54 +24,27 @@ impl<'a> From<ProdType<'a>> for Type<'a> {
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct SumType<'a> {
-    type_id: TypeId<'a>,
-    constructors: Vec<Constr<'a>>,
-    attrs: Option<Attrs<'a>>,
+    pub type_id: TypeId<'a>,
+    pub constructors: Vec<Constr<'a>>,
+    pub attrs: Option<Attrs<'a>>,
 }
-
 impl<'a> SumType<'a> {
 
-    pub fn new(type_id: TypeId<'a>, constructors: Vec<Constr<'a>>, attrs: Option<Attrs<'a>>) -> Self {
+    pub(crate) fn new(type_id: TypeId<'a>, constructors: Vec<Constr<'a>>, attrs: Option<Attrs<'a>>) -> Self {
         SumType{ type_id, constructors, attrs }
-    }
-    
-    #[allow(dead_code)]
-    pub fn type_id(&self) -> &TypeId {
-        &self.type_id
-    }
-    
-    #[allow(dead_code)]
-    pub fn constructors(&self) -> impl Iterator<Item = &Constr> {
-        self.constructors.iter()
-    }
-    
-    #[allow(dead_code)]
-    pub fn attrs(&self) -> &Option<Attrs> {
-        &self.attrs
     }
 }
 
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct ProdType<'a> {
-    type_id: TypeId<'a>,
-    fields: Vec<Field<'a>>,
+    pub type_id: TypeId<'a>,
+    pub fields: Vec<Field<'a>>,
 }
-
 impl<'a> ProdType<'a> {
 
-    pub fn new(type_id: TypeId<'a>, fields: Vec<Field<'a>>) -> Self {
+    pub(crate) fn new(type_id: TypeId<'a>, fields: Vec<Field<'a>>) -> Self {
         ProdType{ type_id, fields }
-    }
-    
-    #[allow(dead_code)]
-    pub fn type_id(&self) -> &TypeId {
-        &self.type_id
-    }
-    
-    #[allow(dead_code)]
-    pub fn fields(&self) -> impl Iterator<Item = &Field> {
-        self.fields.iter()
     }
 }
 #[derive(PartialEq, Eq, Hash, Debug)]
@@ -102,72 +75,39 @@ impl<'a> From<Repeated<'a>> for Field<'a> {
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Required<'a> {
-    type_id: TypeId<'a>,
-    id: Option<Id<'a>>,
+    pub type_id: TypeId<'a>,
+    pub id: Option<Id<'a>>,
 }
-
 impl<'a> Required<'a> {
 
-    pub fn new(type_id: TypeId<'a>, id: Option<Id<'a>>) -> Self {
+    pub(crate) fn new(type_id: TypeId<'a>, id: Option<Id<'a>>) -> Self {
         Required{ type_id, id }
-    }
-    
-    #[allow(dead_code)]
-    pub fn type_id(&self) -> &TypeId {
-        &self.type_id
-    }
-    
-    #[allow(dead_code)]
-    pub fn id(&self) -> &Option<Id> {
-        &self.id
     }
 }
 
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Optional<'a> {
-    type_id: TypeId<'a>,
-    id: Option<Id<'a>>,
+    pub type_id: TypeId<'a>,
+    pub id: Option<Id<'a>>,
 }
-
 impl<'a> Optional<'a> {
 
-    pub fn new(type_id: TypeId<'a>, id: Option<Id<'a>>) -> Self {
+    pub(crate) fn new(type_id: TypeId<'a>, id: Option<Id<'a>>) -> Self {
         Optional{ type_id, id }
-    }
-    
-    #[allow(dead_code)]
-    pub fn type_id(&self) -> &TypeId {
-        &self.type_id
-    }
-    
-    #[allow(dead_code)]
-    pub fn id(&self) -> &Option<Id> {
-        &self.id
     }
 }
 
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Repeated<'a> {
-    type_id: TypeId<'a>,
-    id: Option<Id<'a>>,
+    pub type_id: TypeId<'a>,
+    pub id: Option<Id<'a>>,
 }
-
 impl<'a> Repeated<'a> {
 
-    pub fn new(type_id: TypeId<'a>, id: Option<Id<'a>>) -> Self {
+    pub(crate) fn new(type_id: TypeId<'a>, id: Option<Id<'a>>) -> Self {
         Repeated{ type_id, id }
-    }
-    
-    #[allow(dead_code)]
-    pub fn type_id(&self) -> &TypeId {
-        &self.type_id
-    }
-    
-    #[allow(dead_code)]
-    pub fn id(&self) -> &Option<Id> {
-        &self.id
     }
 }
 
@@ -176,87 +116,67 @@ impl<'a> Repeated<'a> {
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Root<'a> {
-    types: Vec<Type<'a>>,
+    pub types: Vec<Type<'a>>,
 }
-
 impl<'a> Root<'a> {
 
-    pub fn new(types: Vec<Type<'a>>) -> Self {
+    pub(crate) fn new(types: Vec<Type<'a>>) -> Self {
         Root{ types }
-    }
-    
-    #[allow(dead_code)]
-    pub fn types(&self) -> impl Iterator<Item = &Type> {
-        self.types.iter()
     }
 }
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Constr<'a> {
-    id: ConstrId<'a>,
-    fields: Vec<Field<'a>>,
+    pub id: ConstrId<'a>,
+    pub fields: Vec<Field<'a>>,
 }
-
 impl<'a> Constr<'a> {
 
-    pub fn new(id: ConstrId<'a>, fields: Vec<Field<'a>>) -> Self {
+    pub(crate) fn new(id: ConstrId<'a>, fields: Vec<Field<'a>>) -> Self {
         Constr{ id, fields }
-    }
-    
-    #[allow(dead_code)]
-    pub fn id(&self) -> &ConstrId {
-        &self.id
-    }
-    
-    #[allow(dead_code)]
-    pub fn fields(&self) -> impl Iterator<Item = &Field> {
-        self.fields.iter()
     }
 }
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Attrs<'a> {
-    fields: Vec<Field<'a>>,
+    pub fields: Vec<Field<'a>>,
 }
-
 impl<'a> Attrs<'a> {
 
-    pub fn new(fields: Vec<Field<'a>>) -> Self {
+    pub(crate) fn new(fields: Vec<Field<'a>>) -> Self {
         Attrs{ fields }
     }
-    
+}
+#[derive(PartialEq, Eq, Hash, Debug)]
+pub struct TypeId<'a>(pub(crate) &'a str);
+
+
+impl<'a> ToString for TypeId<'a> {
+
     #[allow(dead_code)]
-    pub fn fields(&self) -> impl Iterator<Item = &Field> {
-        self.fields.iter()
+    fn to_string(&self) -> String {
+        self.0.to_string()
     }
 }
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct TypeId<'a>(pub &'a str);
+pub struct ConstrId<'a>(pub(crate) &'a str);
 
-impl<'a> TypeId<'a> {
+
+impl<'a> ToString for ConstrId<'a> {
 
     #[allow(dead_code)]
-    pub fn id(&self) -> &str {
-        self.0
+    fn to_string(&self) -> String {
+        self.0.to_string()
     }
 }
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct ConstrId<'a>(pub &'a str);
+pub struct Id<'a>(pub(crate) &'a str);
 
-impl<'a> ConstrId<'a> {
 
-    #[allow(dead_code)]
-    pub fn id(&self) -> &str {
-        self.0
-    }
-}
-#[derive(PartialEq, Eq, Hash, Debug)]
-pub struct Id<'a>(pub &'a str);
-
-impl<'a> Id<'a> {
+impl<'a> ToString for Id<'a> {
 
     #[allow(dead_code)]
-    pub fn id(&self) -> &str {
-        self.0
+    fn to_string(&self) -> String {
+        self.0.to_string()
     }
 }
