@@ -14,7 +14,8 @@ impl Asdl {
             }
         }
         let types = root.types.iter().map(ty).map(|t| (t.id(), t)).collect();
-        Asdl { types, prod_types, sum_types }
+        let comments = comments(&root.comments);
+        Asdl { types, prod_types, sum_types, comments }
     }
 }
 
@@ -35,45 +36,41 @@ fn ty(ty: &ast::Type) -> Type {
 }
 
 impl SumType {
-    fn new(id: String, constructors: Vec<Constructor>, attributes: Vec<Field>) -> Self {
-        SumType { id, constructors, attributes, is_prod_type: false }
+    fn new(
+        id: String,
+        constructors: Vec<Constructor>,
+        attributes: Vec<Field>,
+        comments: Vec<String>,
+    ) -> Self {
+        SumType { id, constructors, attributes, is_prod_type: false, comments }
     }
 }
 
 fn sum_type(ty: &ast::SumType) -> SumType {
     let id = ty.type_id.to_string();
     let constructors = ty.constructors.iter().map(constr).collect();
-    let attributes = if let Some(attrs) = &ty.attrs {
-        let mut names = FieldNames::default();
-        attrs.fields.iter().map(|f| field(f, &mut names)).collect()
-    } else {
-        vec![]
-    };
-    SumType::new(id, constructors, attributes)
+    let attributes = ty.attrs.as_ref().map(|a| fields(&a.fields)).unwrap_or_default();
+    SumType::new(id, constructors, attributes, comments(&ty.comments))
 }
 
 impl Constructor {
-    fn new(id: String, fields: Vec<Field>) -> Self {
-        Constructor { id, fields }
+    fn new(id: String, fields: Vec<Field>, comments: Vec<String>) -> Self {
+        Constructor { id, fields, comments }
     }
 }
 
 fn constr(c: &ast::Constr) -> Constructor {
-    let mut names = FieldNames::default();
-    let fields: Vec<Field> = c.fields.iter().map(|f| field(f, &mut names)).collect();
-    Constructor::new(c.id.to_string(), fields)
+    Constructor::new(c.id.to_string(), fields(&c.fields), comments(&c.comments))
 }
 
 impl ProdType {
-    fn new(id: String, fields: Vec<Field>) -> Self {
-        ProdType { id, fields, is_prod_type: true }
+    fn new(id: String, fields: Vec<Field>, comments: Vec<String>) -> Self {
+        ProdType { id, fields, is_prod_type: true, comments }
     }
 }
 
 fn prod_type(ty: &ast::ProdType) -> ProdType {
-    let mut names = FieldNames::default();
-    let fields: Vec<Field> = ty.fields.iter().map(|f| field(f, &mut names)).collect();
-    ProdType::new(ty.type_id.to_string(), fields)
+    ProdType::new(ty.type_id.to_string(), fields(&ty.fields), comments(&ty.comments))
 }
 
 impl Field {
@@ -88,6 +85,15 @@ impl Field {
     fn repeated(id: String, type_id: String) -> Self {
         Field { id, type_id, is_required: false, is_optional: false, is_repeated: true }
     }
+}
+
+fn comments(comments: &Vec<&str>) -> Vec<String> {
+    comments.iter().map(ToString::to_string).collect()
+}
+
+fn fields(fields: &Vec<ast::Field>) -> Vec<Field> {
+    let mut names = FieldNames::default();
+    fields.iter().map(|f| field(f, &mut names)).collect()
 }
 
 fn field(f: &ast::Field, names: &mut FieldNames) -> Field {

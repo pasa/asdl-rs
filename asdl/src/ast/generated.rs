@@ -4,7 +4,6 @@
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub enum Type<'a> {
-
     SumType(SumType<'a>),
     ProdType(ProdType<'a>),
 }
@@ -20,36 +19,34 @@ impl<'a> From<ProdType<'a>> for Type<'a> {
 }
 
 
-
-
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct SumType<'a> {
     pub type_id: TypeId<'a>,
     pub constructors: Vec<Constr<'a>>,
     pub attrs: Option<Attrs<'a>>,
+    pub comments: Vec<&'a str>,
 }
 impl<'a> SumType<'a> {
 
-    pub(crate) fn new(type_id: TypeId<'a>, constructors: Vec<Constr<'a>>, attrs: Option<Attrs<'a>>) -> Self {
-        SumType{ type_id, constructors, attrs }
+    pub(crate) fn new(type_id: TypeId<'a>, constructors: Vec<Constr<'a>>, attrs: Option<Attrs<'a>>, comments: Vec<&'a str>) -> Self {
+        SumType{ type_id, constructors, attrs, comments }
     }
 }
-
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct ProdType<'a> {
     pub type_id: TypeId<'a>,
     pub fields: Vec<Field<'a>>,
+    pub comments: Vec<&'a str>,
 }
 impl<'a> ProdType<'a> {
 
-    pub(crate) fn new(type_id: TypeId<'a>, fields: Vec<Field<'a>>) -> Self {
-        ProdType{ type_id, fields }
+    pub(crate) fn new(type_id: TypeId<'a>, fields: Vec<Field<'a>>, comments: Vec<&'a str>) -> Self {
+        ProdType{ type_id, fields, comments }
     }
 }
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub enum Field<'a> {
-
     Required(Required<'a>),
     Optional(Optional<'a>),
     Repeated(Repeated<'a>),
@@ -71,8 +68,6 @@ impl<'a> From<Repeated<'a>> for Field<'a> {
 }
 
 
-
-
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Required<'a> {
     pub type_id: TypeId<'a>,
@@ -85,7 +80,6 @@ impl<'a> Required<'a> {
     }
 }
 
-
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Optional<'a> {
     pub type_id: TypeId<'a>,
@@ -97,7 +91,6 @@ impl<'a> Optional<'a> {
         Optional{ type_id, id }
     }
 }
-
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Repeated<'a> {
@@ -112,16 +105,15 @@ impl<'a> Repeated<'a> {
 }
 
 
-
-
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Root<'a> {
     pub types: Vec<Type<'a>>,
+    pub comments: Vec<&'a str>,
 }
 impl<'a> Root<'a> {
 
-    pub(crate) fn new(types: Vec<Type<'a>>) -> Self {
-        Root{ types }
+    pub(crate) fn new(types: Vec<Type<'a>>, comments: Vec<&'a str>) -> Self {
+        Root{ types, comments }
     }
 }
 
@@ -129,11 +121,12 @@ impl<'a> Root<'a> {
 pub struct Constr<'a> {
     pub id: ConstrId<'a>,
     pub fields: Vec<Field<'a>>,
+    pub comments: Vec<&'a str>,
 }
 impl<'a> Constr<'a> {
 
-    pub(crate) fn new(id: ConstrId<'a>, fields: Vec<Field<'a>>) -> Self {
-        Constr{ id, fields }
+    pub(crate) fn new(id: ConstrId<'a>, fields: Vec<Field<'a>>, comments: Vec<&'a str>) -> Self {
+        Constr{ id, fields, comments }
     }
 }
 
@@ -150,7 +143,6 @@ impl<'a> Attrs<'a> {
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct TypeId<'a>(pub(crate) &'a str);
 
-
 impl<'a> ToString for TypeId<'a> {
 
     #[allow(dead_code)]
@@ -161,7 +153,6 @@ impl<'a> ToString for TypeId<'a> {
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct ConstrId<'a>(pub(crate) &'a str);
 
-
 impl<'a> ToString for ConstrId<'a> {
 
     #[allow(dead_code)]
@@ -171,7 +162,6 @@ impl<'a> ToString for ConstrId<'a> {
 }
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Id<'a>(pub(crate) &'a str);
-
 
 impl<'a> ToString for Id<'a> {
 

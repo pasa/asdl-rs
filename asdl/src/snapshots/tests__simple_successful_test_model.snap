@@ -1,5 +1,5 @@
 ---
-created: "2019-08-23T11:44:40.800337071Z"
+created: "2019-08-28T14:53:40.627431186Z"
 creator: insta@0.8.1
 source: asdl/src/lib.rs
 expression: model
@@ -24,6 +24,10 @@ Asdl {
                                 arity: Repeated,
                             },
                         ],
+                        comments: [
+                            "Compound comment line 1",
+                            "Compound comment line 2",
+                        ],
                     },
                     Constructor {
                         id: "Single",
@@ -34,29 +38,44 @@ Asdl {
                                 arity: Required,
                             },
                         ],
+                        comments: [
+                            "Single comment line 1",
+                            "Single comment line 2 ",
+                        ],
                     },
                 ],
                 attributes: [],
+                comments: [
+                    "stm comment line 1",
+                    "stm comment line 2",
+                ],
             },
         ),
         SumType(
             SumType {
-                id: "noFileds",
+                id: "noFields",
                 constructors: [
                     Constructor {
                         id: "One",
                         fields: [],
+                        comments: [],
                     },
                     Constructor {
                         id: "Two",
                         fields: [],
+                        comments: [],
                     },
                     Constructor {
                         id: "Three",
                         fields: [],
+                        comments: [],
                     },
                 ],
                 attributes: [],
+                comments: [
+                    "noFields comment line 1",
+                    "noFields comment line 2",
+                ],
             },
         ),
         ProdType(
@@ -65,7 +84,7 @@ Asdl {
                 fields: [
                     Field {
                         id: "f",
-                        type_id: "noFileds",
+                        type_id: "noFields",
                         arity: Optional,
                     },
                     Field {
@@ -74,7 +93,15 @@ Asdl {
                         arity: Required,
                     },
                 ],
+                comments: [
+                    "prodType comment line 1",
+                    "prodType comment line 2",
+                ],
             },
         ),
+    ],
+    comments: [
+        "Root comment line 1",
+        "Root comment line 2",
     ],
 }

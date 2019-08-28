@@ -1,5 +1,5 @@
 ---
-created: "2019-08-23T11:43:53.303056243Z"
+created: "2019-08-28T14:49:57.958175708Z"
 creator: insta@0.8.1
 source: asdl/src/lib.rs
 expression: root
@@ -42,6 +42,7 @@ Root {
                                 },
                             ),
                         ],
+                        comments: [],
                     },
                     Constr {
                         id: ConstrId(
@@ -57,6 +58,7 @@ Root {
                                 },
                             ),
                         ],
+                        comments: [],
                     },
                 ],
                 attrs: Some(
@@ -73,6 +75,7 @@ Root {
                         ],
                     },
                 ),
+                comments: [],
             },
         ),
         ProdType(
@@ -94,7 +97,9 @@ Root {
                         },
                     ),
                 ],
+                comments: [],
             },
         ),
     ],
+    comments: [],
 }

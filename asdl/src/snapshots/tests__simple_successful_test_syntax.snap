@@ -1,5 +1,5 @@
 ---
-created: "2019-08-23T11:43:53.303146876Z"
+created: "2019-08-28T14:53:12.761741829Z"
 creator: insta@0.8.1
 source: asdl/src/lib.rs
 expression: root
@@ -42,6 +42,10 @@ Root {
                                 },
                             ),
                         ],
+                        comments: [
+                            "Compound comment line 1",
+                            "Compound comment line 2",
+                        ],
                     },
                     Constr {
                         id: ConstrId(
@@ -57,15 +61,23 @@ Root {
                                 },
                             ),
                         ],
+                        comments: [
+                            "Single comment line 1",
+                            "Single comment line 2 ",
+                        ],
                     },
                 ],
                 attrs: None,
+                comments: [
+                    "stm comment line 1",
+                    "stm comment line 2",
+                ],
             },
         ),
         SumType(
             SumType {
                 type_id: TypeId(
-                    "noFileds",
+                    "noFields",
                 ),
                 constructors: [
                     Constr {
@@ -73,21 +85,28 @@ Root {
                             "One",
                         ),
                         fields: [],
+                        comments: [],
                     },
                     Constr {
                         id: ConstrId(
                             "Two",
                         ),
                         fields: [],
+                        comments: [],
                     },
                     Constr {
                         id: ConstrId(
                             "Three",
                         ),
                         fields: [],
+                        comments: [],
                     },
                 ],
                 attrs: None,
+                comments: [
+                    "noFields comment line 1",
+                    "noFields comment line 2",
+                ],
             },
         ),
         ProdType(
@@ -99,7 +118,7 @@ Root {
                     Optional(
                         Optional {
                             type_id: TypeId(
-                                "noFileds",
+                                "noFields",
                             ),
                             id: Some(
                                 Id(
@@ -121,7 +140,15 @@ Root {
                         },
                     ),
                 ],
+                comments: [
+                    "prodType comment line 1",
+                    "prodType comment line 2",
+                ],
             },
         ),
+    ],
+    comments: [
+        "Root comment line 1",
+        "Root comment line 2",
     ],
 }

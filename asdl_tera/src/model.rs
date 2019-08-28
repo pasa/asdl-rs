@@ -6,6 +6,7 @@ pub struct Asdl {
     pub types: FxHashMap<String, Type>,
     pub prod_types: Vec<String>,
     pub sum_types: Vec<String>,
+    pub comments: Vec<String>,
 }
 
 #[derive(Serialize, Debug)]
@@ -32,12 +33,14 @@ pub struct SumType {
     pub constructors: Vec<Constructor>,
     pub attributes: Vec<Field>,
     pub is_prod_type: bool, //always false
+    pub comments: Vec<String>,
 }
 
 #[derive(Serialize, Debug)]
 pub struct Constructor {
     pub id: String,
     pub fields: Vec<Field>,
+    pub comments: Vec<String>,
 }
 
 #[derive(Serialize, Debug)]
@@ -45,6 +48,7 @@ pub struct ProdType {
     pub id: String,
     pub fields: Vec<Field>,
     pub is_prod_type: bool, //always true
+    pub comments: Vec<String>,
 }
 
 #[derive(Serialize, Debug)]

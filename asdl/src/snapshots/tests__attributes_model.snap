@@ -1,5 +1,5 @@
 ---
-created: "2019-08-23T11:44:40.800280481Z"
+created: "2019-08-28T14:51:03.158460755Z"
 creator: insta@0.8.1
 source: asdl/src/lib.rs
 expression: model
@@ -24,6 +24,7 @@ Asdl {
                                 arity: Repeated,
                             },
                         ],
+                        comments: [],
                     },
                     Constructor {
                         id: "Single",
@@ -34,6 +35,7 @@ Asdl {
                                 arity: Required,
                             },
                         ],
+                        comments: [],
                     },
                 ],
                 attributes: [
@@ -43,6 +45,7 @@ Asdl {
                         arity: Optional,
                     },
                 ],
+                comments: [],
             },
         ),
         ProdType(
@@ -55,7 +58,9 @@ Asdl {
                         arity: Required,
                     },
                 ],
+                comments: [],
             },
         ),
     ],
+    comments: [],
 }

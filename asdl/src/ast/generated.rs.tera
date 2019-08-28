@@ -10,23 +10,22 @@
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub enum {{ type_name }}<'a> {
-{% for c in ty.constructors %}
+{%- for c in ty.constructors %}
     {{c.id | camel }}({{ c.id | camel }}<'a>),
 {%- endfor %}
 }
-{% for c in ty.constructors %}
+{% for c in ty.constructors -%}
 {%- set c_name = c.id | camel -%}
 impl<'a> From<{{c_name}}<'a>> for {{ type_name }}<'a> {
     fn from(n: {{c_name}}) -> {{ type_name }} {
         {{ type_name }}::{{c_name}}(n)
     }
 }
-{% endfor %}
-
+{% endfor -%}
 {% for c in ty.constructors %}
 {{ macros::type(ty = c) }}
-{% endfor %}
 {%- endfor %}
+{% endfor -%}
 
 {% for ty_name in prod_types %}
 {%- set ty = types[ty_name] -%}
@@ -35,4 +34,4 @@ impl<'a> From<{{c_name}}<'a>> for {{ type_name }}<'a> {
 {%- else %}
 {{ macros::type(ty = ty) }}
 {%- endif -%}
-{%- endfor%}
+{% endfor-%}

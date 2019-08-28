@@ -1,6 +1,7 @@
 #[derive(Debug)]
 pub struct Asdl {
     pub types: Vec<Type>,
+    pub comments: Vec<String>,
 }
 
 impl Asdl {
@@ -40,18 +41,21 @@ pub struct SumType {
     pub id: String,
     pub constructors: Vec<Constructor>,
     pub attributes: Vec<Field>,
+    pub comments: Vec<String>,
 }
 
 #[derive(Debug)]
 pub struct Constructor {
     pub id: String,
     pub fields: Vec<Field>,
+    pub comments: Vec<String>,
 }
 
 #[derive(Debug)]
 pub struct ProdType {
     pub id: String,
     pub fields: Vec<Field>,
+    pub comments: Vec<String>,
 }
 
 #[derive(Debug)]

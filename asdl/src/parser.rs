@@ -5,29 +5,31 @@ use super::ast::*;
 
 use std::ops::{RangeFrom, RangeTo};
 
-use nom::combinator::recognize;
-use nom::character::complete::char;
-use nom::character::is_alphanumeric;
-use nom::sequence::pair;
+use nom::{Slice, InputIter, Offset, AsChar, InputTakeAtPosition};
 use nom::error::ParseError;
-use nom::InputTakeAtPosition;
-use nom::AsChar;
-use nom::bytes::complete::take_while_m_n;
-use nom::bytes::complete::take_while;
+use nom::character::is_alphanumeric;
+use nom::character::complete::{char, one_of};
+use nom::sequence::{pair, tuple};
+use nom::bytes::complete::{take_while_m_n, take_while, is_a};
 use nom::branch::alt;
-use nom::character::complete::one_of;
-use nom::combinator::opt;
-use nom::sequence::tuple;
-use nom::character::complete::multispace1;
-use nom::character::complete::multispace0;
-use nom::multi::separated_list;
-use nom::{Slice, InputIter, Offset};
-use nom::combinator::map;
-use nom::bytes::complete::is_a;
-use nom::multi::many0;
+use nom::multi::{separated_list, many0};
+use nom::combinator::{map, opt, recognize};
+use nom::character::complete::{multispace0, multispace1, line_ending, not_line_ending, space0};
 
 pub(crate) fn parse(i: &str) -> IResult<&str, Root> {
-    map(many0(ty), Root::new)(i)
+    map(
+        tuple((multispace0, opt(pair(comments, multispace1)), many0(ty))),
+        |(_, comments, types)| Root::new(types, comments.map(|(c, _)| c).unwrap_or_default()),
+    )(i)
+}
+
+fn comment_line(i: &str) -> IResult<&str, &str> {
+    let (i, (_, _, _, comment)) = tuple((space0, is_a("//"), space0, not_line_ending))(i)?;
+    Ok((i, comment))
+}
+
+fn comments(i: &str) -> IResult<&str, Vec<&str>> {
+    separated_list(line_ending, comment_line)(i)
 }
 
 fn ty(i: &str) -> IResult<&str, Type> {
@@ -35,15 +37,27 @@ fn ty(i: &str) -> IResult<&str, Type> {
 }
 
 fn prod_type(i: &str) -> IResult<&str, ProdType> {
-    map(tuple((multispace0, type_id, char_ms0('='), fields)), |(_, type_id, _, fields)| {
-        ProdType::new(type_id, fields)
-    })(i)
+    map(
+        tuple((comments, multispace0, type_id, char_ms0('='), fields)),
+        |(comments, _, type_id, _, fields)| ProdType::new(type_id, fields, comments),
+    )(i)
 }
 
 fn sum_type(i: &str) -> IResult<&str, SumType> {
     map(
-        tuple((multispace0, type_id, char_ms0('='), constructors, opt(attrs))),
-        |(_, type_id, _, constructors, attrs)| SumType::new(type_id, constructors, attrs),
+        tuple((
+            multispace0,
+            comments,
+            opt(line_ending),
+            space0,
+            type_id,
+            char_ms0('='),
+            constructors,
+            opt(attrs),
+        )),
+        |(_, comments, _, _, type_id, _, constructors, attrs)| {
+            SumType::new(type_id, constructors, attrs, comments)
+        },
     )(i)
 }
 
@@ -56,9 +70,12 @@ fn constructors(i: &str) -> IResult<&str, Vec<Constr>> {
 }
 
 fn constructor(i: &str) -> IResult<&str, Constr> {
-    map(pair(con_id, opt(fields)), |(con_id, fields)| {
-        Constr::new(con_id, fields.unwrap_or_else(|| vec![]))
-    })(i)
+    map(
+        tuple((multispace0, comments, multispace0, con_id, multispace0, opt(fields))),
+        |(_, comments, _, con_id, _, fields)| {
+            Constr::new(con_id, fields.unwrap_or_else(|| vec![]), comments)
+        },
+    )(i)
 }
 
 fn fields(i: &str) -> IResult<&str, Vec<Field>> {
@@ -225,12 +242,16 @@ mod tests {
                     vec![
                         Required::new(TypeId("type1"), None).into(),
                         Optional::new(TypeId("type2"), Some(Id("name"))).into()
-                    ]
+                    ],
+                    vec![]
                 )
             ))
         );
 
-        assert_eq!(constructor("ConstrId"), Ok(("", Constr::new(ConstrId("ConstrId"), vec![]))));
+        assert_eq!(
+            constructor("ConstrId"),
+            Ok(("", Constr::new(ConstrId("ConstrId"), vec![], vec![])))
+        );
     }
 
     #[test]
@@ -245,10 +266,114 @@ mod tests {
                         vec![
                             Required::new(TypeId("type1"), None).into(),
                             Optional::new(TypeId("type2"), Some(Id("name"))).into()
-                        ]
+                        ],
+                        vec![]
                     ),
-                    Constr::new(ConstrId("ConstrId2"), vec![])
+                    Constr::new(ConstrId("ConstrId2"), vec![], vec![])
                 ]
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_comment_line() {
+        let asdl = r#"  //comment line1"#;
+        assert_eq!(comment_line(asdl), Ok(("", "comment line1")));
+    }
+
+    #[test]
+    fn parse_comments() {
+        let asdl = r#"  // comment line1
+                        // comment line2"#;
+        assert_eq!(comments(asdl), Ok(("", vec!["comment line1", "comment line2"])));
+    }
+
+    #[test]
+    fn parse_constructors_with_comments() {
+        let asdl = r#"  // ConstrId1 comment
+                        ConstrId1( type1, type2? name  ) |
+                        // ConstrId2 comment line1
+                        // ConstrId2 comment line2
+                        ConstrId2"#;
+        assert_eq!(
+            constructors(asdl),
+            Ok((
+                "",
+                vec![
+                    Constr::new(
+                        ConstrId("ConstrId1"),
+                        vec![
+                            Required::new(TypeId("type1"), None).into(),
+                            Optional::new(TypeId("type2"), Some(Id("name"))).into()
+                        ],
+                        vec!["ConstrId1 comment"]
+                    ),
+                    Constr::new(
+                        ConstrId("ConstrId2"),
+                        vec![],
+                        vec!["ConstrId2 comment line1", "ConstrId2 comment line2"]
+                    )
+                ]
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_sum_type() {
+        let asdl = r#"
+                    // SumType comment line 1
+                    // SumType comment line 2
+                    sumType = 
+                        // ConstrId1 comment
+                        ConstrId1( type1, type2? name  ) |
+                        // ConstrId2 comment line1
+                        // ConstrId2 comment line2
+                        ConstrId2"#;
+        assert_eq!(
+            sum_type(asdl),
+            Ok((
+                "",
+                SumType::new(
+                    TypeId("sumType"),
+                    vec![
+                        Constr::new(
+                            ConstrId("ConstrId1"),
+                            vec![
+                                Required::new(TypeId("type1"), None).into(),
+                                Optional::new(TypeId("type2"), Some(Id("name"))).into()
+                            ],
+                            vec!["ConstrId1 comment"]
+                        ),
+                        Constr::new(
+                            ConstrId("ConstrId2"),
+                            vec![],
+                            vec!["ConstrId2 comment line1", "ConstrId2 comment line2"]
+                        )
+                    ],
+                    None,
+                    vec!["SumType comment line 1", "SumType comment line 2"]
+                )
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_prod_type() {
+        let asdl = r#"  // prodType comment line 1
+                        // prodType comment line 2
+                        prodType = ( type1, type2? name  )"#;
+        assert_eq!(
+            prod_type(asdl),
+            Ok((
+                "",
+                ProdType::new(
+                    TypeId("prodType"),
+                    vec![
+                        Required::new(TypeId("type1"), None).into(),
+                        Optional::new(TypeId("type2"), Some(Id("name"))).into()
+                    ],
+                    vec!["prodType comment line 1", "prodType comment line 2"]
+                )
             ))
         );
     }
