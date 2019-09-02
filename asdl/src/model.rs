@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Asdl {
     pub types: Vec<Type>,
     pub comments: Vec<String>,
@@ -10,7 +10,7 @@ impl Asdl {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Type {
     SumType(SumType),
     ProdType(ProdType),
@@ -36,7 +36,7 @@ impl From<ProdType> for Type {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct SumType {
     pub id: String,
     pub constructors: Vec<Constructor>,
@@ -44,28 +44,28 @@ pub struct SumType {
     pub comments: Vec<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Constructor {
     pub id: String,
     pub fields: Vec<Field>,
     pub comments: Vec<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ProdType {
     pub id: String,
     pub fields: Vec<Field>,
     pub comments: Vec<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Field {
     pub id: String,
     pub type_id: String,
     pub arity: Arity,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Arity {
     Optional,
     Required,
