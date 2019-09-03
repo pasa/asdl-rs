@@ -1,20 +1,18 @@
-use asdl::ast;
-use asdl::util::FieldNames;
-
 use crate::model::*;
+use asdl;
 
 impl Asdl {
-    pub(crate) fn new(root: &ast::Root) -> Self {
+    pub(crate) fn new(model: asdl::Asdl) -> Self {
         let mut prod_types = Vec::new();
         let mut sum_types = Vec::new();
-        for ty in root.types.iter() {
+        for ty in model.types.iter() {
             match ty {
-                ast::Type::SumType(sty) => sum_types.push(sty.type_id.to_string()),
-                ast::Type::ProdType(pty) => prod_types.push(pty.type_id.to_string()),
+                asdl::Type::SumType(sty) => sum_types.push(sty.id.clone()),
+                asdl::Type::ProdType(pty) => prod_types.push(pty.id.clone()),
             }
         }
-        let types = root.types.iter().map(ty).map(|t| (t.id(), t)).collect();
-        let comments = comments(&root.comments);
+        let types = model.types.into_iter().map(ty).map(|t| (t.id(), t)).collect();
+        let comments = model.comments;
         Asdl { types, prod_types, sum_types, comments }
     }
 }
@@ -28,10 +26,10 @@ impl Type {
     }
 }
 
-fn ty(ty: &ast::Type) -> Type {
+fn ty(ty: asdl::Type) -> Type {
     match ty {
-        ast::Type::SumType(sty) => sum_type(sty).into(),
-        ast::Type::ProdType(pty) => prod_type(pty).into(),
+        asdl::Type::SumType(sty) => sum_type(sty).into(),
+        asdl::Type::ProdType(pty) => prod_type(pty).into(),
     }
 }
 
@@ -46,11 +44,12 @@ impl SumType {
     }
 }
 
-fn sum_type(ty: &ast::SumType) -> SumType {
-    let id = ty.type_id.to_string();
-    let constructors = ty.constructors.iter().map(constr).collect();
-    let attributes = ty.attrs.as_ref().map(|a| fields(&a.fields)).unwrap_or_default();
-    SumType::new(id, constructors, attributes, comments(&ty.comments))
+fn sum_type(ty: asdl::SumType) -> SumType {
+    let id = ty.id;
+    let constructors = ty.constructors.into_iter().map(constr).collect();
+    let attributes = fields(ty.attributes);
+    let comments = ty.comments;
+    SumType::new(id, constructors, attributes, comments)
 }
 
 impl Constructor {
@@ -59,8 +58,8 @@ impl Constructor {
     }
 }
 
-fn constr(c: &ast::Constr) -> Constructor {
-    Constructor::new(c.id.to_string(), fields(&c.fields), comments(&c.comments))
+fn constr(c: asdl::Constructor) -> Constructor {
+    Constructor::new(c.id, fields(c.fields), c.comments)
 }
 
 impl ProdType {
@@ -69,8 +68,8 @@ impl ProdType {
     }
 }
 
-fn prod_type(ty: &ast::ProdType) -> ProdType {
-    ProdType::new(ty.type_id.to_string(), fields(&ty.fields), comments(&ty.comments))
+fn prod_type(ty: asdl::ProdType) -> ProdType {
+    ProdType::new(ty.id, fields(ty.fields), ty.comments)
 }
 
 impl Field {
@@ -87,25 +86,14 @@ impl Field {
     }
 }
 
-fn comments(comments: &Vec<&str>) -> Vec<String> {
-    comments.iter().map(ToString::to_string).collect()
+fn fields(fields: Vec<asdl::Field>) -> Vec<Field> {
+    fields.into_iter().map(field).collect()
 }
 
-fn fields(fields: &Vec<ast::Field>) -> Vec<Field> {
-    let mut names = FieldNames::default();
-    fields.iter().map(|f| field(f, &mut names)).collect()
-}
-
-fn field(f: &ast::Field, names: &mut FieldNames) -> Field {
-    match f {
-        ast::Field::Required(f) => {
-            Field::required(names.get_or_generate(&f.id, &f.type_id), f.type_id.to_string())
-        }
-        ast::Field::Optional(f) => {
-            Field::optional(names.get_or_generate(&f.id, &f.type_id), f.type_id.to_string())
-        }
-        ast::Field::Repeated(f) => {
-            Field::repeated(names.get_or_generate(&f.id, &f.type_id), f.type_id.to_string())
-        }
+fn field(f: asdl::Field) -> Field {
+    match f.arity {
+        asdl::Arity::Required => Field::required(f.id, f.type_id),
+        asdl::Arity::Optional => Field::optional(f.id, f.type_id),
+        asdl::Arity::Repeated => Field::repeated(f.id, f.type_id),
     }
 }

@@ -3,7 +3,7 @@ use crate::ast;
 use crate::util::FieldNames;
 
 impl Asdl {
-    pub fn new(root: &ast::Root) -> Self {
+    pub(crate) fn new(root: &ast::Root) -> Self {
         Asdl { types: root.types.iter().map(ty).collect(), comments: comments(&root.comments) }
     }
 }

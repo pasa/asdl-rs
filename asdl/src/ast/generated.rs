@@ -3,7 +3,7 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub enum Type<'a> {
+pub(crate) enum Type<'a> {
     SumType(SumType<'a>),
     ProdType(ProdType<'a>),
 }
@@ -20,11 +20,11 @@ impl<'a> From<ProdType<'a>> for Type<'a> {
 
 
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct SumType<'a> {
-    pub type_id: TypeId<'a>,
-    pub constructors: Vec<Constr<'a>>,
-    pub attrs: Option<Attrs<'a>>,
-    pub comments: Vec<&'a str>,
+pub(crate) struct SumType<'a> {
+    pub(crate) type_id: TypeId<'a>,
+    pub(crate) constructors: Vec<Constr<'a>>,
+    pub(crate) attrs: Option<Attrs<'a>>,
+    pub(crate) comments: Vec<&'a str>,
 }
 impl<'a> SumType<'a> {
 
@@ -34,10 +34,10 @@ impl<'a> SumType<'a> {
 }
 
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct ProdType<'a> {
-    pub type_id: TypeId<'a>,
-    pub fields: Vec<Field<'a>>,
-    pub comments: Vec<&'a str>,
+pub(crate) struct ProdType<'a> {
+    pub(crate) type_id: TypeId<'a>,
+    pub(crate) fields: Vec<Field<'a>>,
+    pub(crate) comments: Vec<&'a str>,
 }
 impl<'a> ProdType<'a> {
 
@@ -46,7 +46,7 @@ impl<'a> ProdType<'a> {
     }
 }
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub enum Field<'a> {
+pub(crate) enum Field<'a> {
     Required(Required<'a>),
     Optional(Optional<'a>),
     Repeated(Repeated<'a>),
@@ -69,9 +69,9 @@ impl<'a> From<Repeated<'a>> for Field<'a> {
 
 
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct Required<'a> {
-    pub type_id: TypeId<'a>,
-    pub id: Option<Id<'a>>,
+pub(crate) struct Required<'a> {
+    pub(crate) type_id: TypeId<'a>,
+    pub(crate) id: Option<Id<'a>>,
 }
 impl<'a> Required<'a> {
 
@@ -81,9 +81,9 @@ impl<'a> Required<'a> {
 }
 
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct Optional<'a> {
-    pub type_id: TypeId<'a>,
-    pub id: Option<Id<'a>>,
+pub(crate) struct Optional<'a> {
+    pub(crate) type_id: TypeId<'a>,
+    pub(crate) id: Option<Id<'a>>,
 }
 impl<'a> Optional<'a> {
 
@@ -93,9 +93,9 @@ impl<'a> Optional<'a> {
 }
 
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct Repeated<'a> {
-    pub type_id: TypeId<'a>,
-    pub id: Option<Id<'a>>,
+pub(crate) struct Repeated<'a> {
+    pub(crate) type_id: TypeId<'a>,
+    pub(crate) id: Option<Id<'a>>,
 }
 impl<'a> Repeated<'a> {
 
@@ -106,9 +106,9 @@ impl<'a> Repeated<'a> {
 
 
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct Root<'a> {
-    pub types: Vec<Type<'a>>,
-    pub comments: Vec<&'a str>,
+pub(crate) struct Root<'a> {
+    pub(crate) types: Vec<Type<'a>>,
+    pub(crate) comments: Vec<&'a str>,
 }
 impl<'a> Root<'a> {
 
@@ -118,10 +118,10 @@ impl<'a> Root<'a> {
 }
 
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct Constr<'a> {
-    pub id: ConstrId<'a>,
-    pub fields: Vec<Field<'a>>,
-    pub comments: Vec<&'a str>,
+pub(crate) struct Constr<'a> {
+    pub(crate) id: ConstrId<'a>,
+    pub(crate) fields: Vec<Field<'a>>,
+    pub(crate) comments: Vec<&'a str>,
 }
 impl<'a> Constr<'a> {
 
@@ -131,8 +131,8 @@ impl<'a> Constr<'a> {
 }
 
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct Attrs<'a> {
-    pub fields: Vec<Field<'a>>,
+pub(crate) struct Attrs<'a> {
+    pub(crate) fields: Vec<Field<'a>>,
 }
 impl<'a> Attrs<'a> {
 
@@ -141,7 +141,7 @@ impl<'a> Attrs<'a> {
     }
 }
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct TypeId<'a>(pub(crate) &'a str);
+pub(crate) struct TypeId<'a>(pub(crate) &'a str);
 
 impl<'a> ToString for TypeId<'a> {
 
@@ -151,7 +151,7 @@ impl<'a> ToString for TypeId<'a> {
     }
 }
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct ConstrId<'a>(pub(crate) &'a str);
+pub(crate) struct ConstrId<'a>(pub(crate) &'a str);
 
 impl<'a> ToString for ConstrId<'a> {
 
@@ -161,7 +161,7 @@ impl<'a> ToString for ConstrId<'a> {
     }
 }
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct Id<'a>(pub(crate) &'a str);
+pub(crate) struct Id<'a>(pub(crate) &'a str);
 
 impl<'a> ToString for Id<'a> {
 

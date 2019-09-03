@@ -4,12 +4,16 @@ use rustc_hash::FxHashMap;
 use crate::ast;
 
 #[derive(Default)]
-pub struct FieldNames {
+pub(crate) struct FieldNames {
     names_indexes: FxHashMap<String, u32>,
 }
 
 impl FieldNames {
-    pub fn get_or_generate(&mut self, id: &Option<ast::Id>, type_id: &ast::TypeId) -> String {
+    pub(crate) fn get_or_generate(
+        &mut self,
+        id: &Option<ast::Id>,
+        type_id: &ast::TypeId,
+    ) -> String {
         match id {
             Option::Some(id) => id.to_string(),
             Option::None => {

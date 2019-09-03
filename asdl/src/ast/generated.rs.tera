@@ -9,7 +9,7 @@
 {%- set type_name = ty.id | camel -%}
 
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub enum {{ type_name }}<'a> {
+pub(crate) enum {{ type_name }}<'a> {
 {%- for c in ty.constructors %}
     {{c.id | camel }}({{ c.id | camel }}<'a>),
 {%- endfor %}

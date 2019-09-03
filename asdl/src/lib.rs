@@ -1,23 +1,23 @@
-pub mod ast;
+mod ast;
 mod parser;
-pub mod model;
+mod model;
 mod model_impl;
-pub mod util;
+mod util;
 
 use std::error::Error;
 use std::fmt;
 
-pub use model::Asdl;
+pub use model::*;
 
 pub type Result<T> = std::result::Result<T, AsdlError>;
 
-pub fn ast(asdl: &str) -> Result<ast::Root> {
-    let (_, root) = parser::parse(asdl).unwrap();
-    Ok(root)
+pub fn asdl(asdl: &str) -> Result<Asdl> {
+    ast(asdl).map(|a| Asdl::new(&a))
 }
 
-pub fn model(asdl: &str) -> Result<Asdl> {
-    ast(asdl).map(|a| Asdl::new(&a))
+fn ast(asdl: &str) -> Result<ast::Root> {
+    let (_, root) = parser::parse(asdl).unwrap();
+    Ok(root)
 }
 
 #[derive(Debug)]

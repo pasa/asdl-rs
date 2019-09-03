@@ -1,3 +1,3 @@
 mod generated;
 
-pub use generated::*;
+pub(crate) use generated::*;

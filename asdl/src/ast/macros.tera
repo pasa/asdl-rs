@@ -1,7 +1,7 @@
 {%- macro type(ty) -%}
 {% set type_name = ty.id | camel %}
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct {{type_name}}<'a> {
+pub(crate) struct {{type_name}}<'a> {
     {%- for f in ty.fields %}
     {{ self::field(f = f) }},
     {%- endfor %}
@@ -35,7 +35,7 @@ impl<'a> {{type_name}}<'a> {
 
 {%- macro field(f) -%}
 {%- set field_name = f.id | snake -%}
-    pub {{field_name}}: {{ self::field_type(f = f) }}
+    pub(crate) {{field_name}}: {{ self::field_type(f = f) }}
 {%- endmacro field -%}
 
 {%- macro field_type(f) -%}
@@ -62,7 +62,7 @@ impl<'a> {{type_name}}<'a> {
 {%- set field_type = self::field_type(f = filed) -%}
 {%- set method_name = filed.id | snake -%}
 #[derive(PartialEq, Eq, Hash, Debug)]
-pub struct {{type_name}}<'a>(pub(crate) {{ field_type }});
+pub(crate) struct {{type_name}}<'a>(pub(crate) {{ field_type }});
 
 impl<'a> ToString for {{type_name}}<'a> {
 

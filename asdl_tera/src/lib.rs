@@ -54,8 +54,8 @@ impl From<std::io::Error> for AsdlTeraError {
 }
 
 pub fn generate<P: AsRef<Path>>(asdl: &str, templates: &Vec<P>) -> Result<String> {
-    let ast = asdl::ast(asdl)?;
-    let model = model::Asdl::new(&ast);
+    let asdl = asdl::asdl(asdl)?;
+    let model = model::Asdl::new(asdl);
     let mut tera = Tera::default();
     tera.register_filter("camel", |arg, _| Ok(arg.as_str().unwrap().to_camel_case().into()));
     tera.register_filter("snake", |arg, _| Ok(arg.as_str().unwrap().to_snake_case().into()));
