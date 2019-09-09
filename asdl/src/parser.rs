@@ -12,7 +12,7 @@ use nom::character::complete::{char, one_of};
 use nom::sequence::{pair, tuple};
 use nom::bytes::complete::{take_while_m_n, take_while, is_a};
 use nom::branch::alt;
-use nom::multi::{separated_list, many0};
+use nom::multi::{separated_list, many0, separated_nonempty_list};
 use nom::combinator::{map, opt, recognize};
 use nom::character::complete::{multispace0, multispace1, line_ending, not_line_ending, space0};
 
@@ -66,7 +66,7 @@ fn attrs(i: &str) -> IResult<&str, Attrs> {
 }
 
 fn constructors(i: &str) -> IResult<&str, Vec<Constr>> {
-    separated_list(char_ms0('|'), constructor)(i)
+    separated_nonempty_list(char_ms0('|'), constructor)(i)
 }
 
 fn constructor(i: &str) -> IResult<&str, Constr> {
@@ -166,6 +166,7 @@ mod tests {
     use nom;
     use nom::error::ErrorKind;
     use nom::Err;
+    use insta::assert_debug_snapshot_matches;
 
     #[test]
     fn parse_type_id() {
@@ -295,27 +296,7 @@ mod tests {
                         // ConstrId2 comment line1
                         // ConstrId2 comment line2
                         ConstrId2"#;
-        assert_eq!(
-            constructors(asdl),
-            Ok((
-                "",
-                vec![
-                    Constr::new(
-                        ConstrId("ConstrId1"),
-                        vec![
-                            Required::new(TypeId("type1"), None).into(),
-                            Optional::new(TypeId("type2"), Some(Id("name"))).into()
-                        ],
-                        vec!["ConstrId1 comment"]
-                    ),
-                    Constr::new(
-                        ConstrId("ConstrId2"),
-                        vec![],
-                        vec!["ConstrId2 comment line1", "ConstrId2 comment line2"]
-                    )
-                ]
-            ))
-        );
+        assert_debug_snapshot_matches!(constructors(asdl));
     }
 
     #[test]
@@ -329,32 +310,7 @@ mod tests {
                         // ConstrId2 comment line1
                         // ConstrId2 comment line2
                         ConstrId2"#;
-        assert_eq!(
-            sum_type(asdl),
-            Ok((
-                "",
-                SumType::new(
-                    TypeId("sumType"),
-                    vec![
-                        Constr::new(
-                            ConstrId("ConstrId1"),
-                            vec![
-                                Required::new(TypeId("type1"), None).into(),
-                                Optional::new(TypeId("type2"), Some(Id("name"))).into()
-                            ],
-                            vec!["ConstrId1 comment"]
-                        ),
-                        Constr::new(
-                            ConstrId("ConstrId2"),
-                            vec![],
-                            vec!["ConstrId2 comment line1", "ConstrId2 comment line2"]
-                        )
-                    ],
-                    None,
-                    vec!["SumType comment line 1", "SumType comment line 2"]
-                )
-            ))
-        );
+        assert_debug_snapshot_matches!(sum_type(asdl));
     }
 
     #[test]
@@ -362,19 +318,12 @@ mod tests {
         let asdl = r#"  // prodType comment line 1
                         // prodType comment line 2
                         prodType = ( type1, type2? name  )"#;
-        assert_eq!(
-            prod_type(asdl),
-            Ok((
-                "",
-                ProdType::new(
-                    TypeId("prodType"),
-                    vec![
-                        Required::new(TypeId("type1"), None).into(),
-                        Optional::new(TypeId("type2"), Some(Id("name"))).into()
-                    ],
-                    vec!["prodType comment line 1", "prodType comment line 2"]
-                )
-            ))
-        );
+        assert_debug_snapshot_matches!(prod_type(asdl));
+    }
+
+    #[test]
+    fn parse_empty_asdl() {
+        let asdl = "";
+        assert_debug_snapshot_matches!(parse(asdl));
     }
 }

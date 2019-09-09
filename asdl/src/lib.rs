@@ -4,38 +4,7 @@ mod model;
 mod model_impl;
 mod util;
 
-use std::error::Error;
-use std::fmt;
-
 pub use model::*;
-
-pub type Result<T> = std::result::Result<T, AsdlError>;
-
-pub fn asdl(asdl: &str) -> Result<Asdl> {
-    ast(asdl).map(|a| Asdl::new(&a))
-}
-
-fn ast(asdl: &str) -> Result<ast::Root> {
-    let (_, root) = parser::parse(asdl).unwrap();
-    Ok(root)
-}
-
-#[derive(Debug)]
-pub struct AsdlError {
-    details: String,
-}
-
-impl fmt::Display for AsdlError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.details)
-    }
-}
-
-impl Error for AsdlError {
-    fn description(&self) -> &str {
-        &self.details
-    }
-}
 
 #[cfg(test)]
 mod tests {

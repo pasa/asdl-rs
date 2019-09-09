@@ -1,11 +1,11 @@
 use std::fmt::Write;
-use rustc_hash::FxHashMap;
+use std::collections::HashMap;
 
 use crate::ast;
 
 #[derive(Default)]
 pub(crate) struct FieldNames {
-    names_indexes: FxHashMap<String, u32>,
+    names_indexes: HashMap<String, u32>,
 }
 
 impl FieldNames {

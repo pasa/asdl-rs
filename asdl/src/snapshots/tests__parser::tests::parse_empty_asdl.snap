@@ -1,0 +1,15 @@
+---
+created: "2019-09-04T15:18:14.678724193Z"
+creator: insta@0.8.1
+source: asdl/src/parser.rs
+expression: parse(asdl)
+---
+Ok(
+    (
+        "",
+        Root {
+            types: [],
+            comments: [],
+        },
+    ),
+)

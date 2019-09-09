@@ -1,0 +1,42 @@
+---
+created: "2019-09-04T14:39:19.728980290Z"
+creator: insta@0.8.1
+source: asdl/src/parser.rs
+expression: prod_type(asdl)
+---
+Ok(
+    (
+        "",
+        ProdType {
+            type_id: TypeId(
+                "prodType",
+            ),
+            fields: [
+                Required(
+                    Required {
+                        type_id: TypeId(
+                            "type1",
+                        ),
+                        id: None,
+                    },
+                ),
+                Optional(
+                    Optional {
+                        type_id: TypeId(
+                            "type2",
+                        ),
+                        id: Some(
+                            Id(
+                                "name",
+                            ),
+                        ),
+                    },
+                ),
+            ],
+            comments: [
+                "prodType comment line 1",
+                "prodType comment line 2",
+            ],
+        },
+    ),
+)

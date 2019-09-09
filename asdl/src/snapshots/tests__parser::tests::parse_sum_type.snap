@@ -1,0 +1,63 @@
+---
+created: "2019-09-04T14:37:06.771550664Z"
+creator: insta@0.8.1
+source: asdl/src/parser.rs
+expression: sum_type(asdl)
+---
+Ok(
+    (
+        "",
+        SumType {
+            type_id: TypeId(
+                "sumType",
+            ),
+            constructors: [
+                Constr {
+                    id: ConstrId(
+                        "ConstrId1",
+                    ),
+                    fields: [
+                        Required(
+                            Required {
+                                type_id: TypeId(
+                                    "type1",
+                                ),
+                                id: None,
+                            },
+                        ),
+                        Optional(
+                            Optional {
+                                type_id: TypeId(
+                                    "type2",
+                                ),
+                                id: Some(
+                                    Id(
+                                        "name",
+                                    ),
+                                ),
+                            },
+                        ),
+                    ],
+                    comments: [
+                        "ConstrId1 comment",
+                    ],
+                },
+                Constr {
+                    id: ConstrId(
+                        "ConstrId2",
+                    ),
+                    fields: [],
+                    comments: [
+                        "ConstrId2 comment line1",
+                        "ConstrId2 comment line2",
+                    ],
+                },
+            ],
+            attrs: None,
+            comments: [
+                "SumType comment line 1",
+                "SumType comment line 2",
+            ],
+        },
+    ),
+)

@@ -1,0 +1,53 @@
+---
+created: "2019-09-09T08:53:34.764048586Z"
+creator: insta@0.8.1
+source: asdl/src/parser.rs
+expression: constructors(asdl)
+---
+Ok(
+    (
+        "",
+        [
+            Constr {
+                id: ConstrId(
+                    "ConstrId1",
+                ),
+                fields: [
+                    Required(
+                        Required {
+                            type_id: TypeId(
+                                "type1",
+                            ),
+                            id: None,
+                        },
+                    ),
+                    Optional(
+                        Optional {
+                            type_id: TypeId(
+                                "type2",
+                            ),
+                            id: Some(
+                                Id(
+                                    "name",
+                                ),
+                            ),
+                        },
+                    ),
+                ],
+                comments: [
+                    "ConstrId1 comment",
+                ],
+            },
+            Constr {
+                id: ConstrId(
+                    "ConstrId2",
+                ),
+                fields: [],
+                comments: [
+                    "ConstrId2 comment line1",
+                    "ConstrId2 comment line2",
+                ],
+            },
+        ],
+    ),
+)
