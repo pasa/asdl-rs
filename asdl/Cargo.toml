@@ -2,7 +2,11 @@
 authors = ["Sergey Parilin <parilinsa@gmail.com>"]
 edition = "2018"
 name = "asdl"
-version = "0.1.0"
+version = "1.0.0"
+description = "Parser for ASDL format. Describes the abstract syntax of compiler intermediate representations and other tree-like data structures"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/pasa/asdl-rs.git"
+exclude = ["/snapshots/*"]
 
 [dependencies.nom]
 version = "5"

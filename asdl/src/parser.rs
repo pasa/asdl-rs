@@ -296,7 +296,7 @@ mod tests {
                         // ConstrId2 comment line1
                         // ConstrId2 comment line2
                         ConstrId2"#;
-        assert_debug_snapshot_matches!(constructors(asdl));
+        assert_debug_snapshot_matches!("parse_constructors_with_comments", constructors(asdl));
     }
 
     #[test]
@@ -310,7 +310,7 @@ mod tests {
                         // ConstrId2 comment line1
                         // ConstrId2 comment line2
                         ConstrId2"#;
-        assert_debug_snapshot_matches!(sum_type(asdl));
+        assert_debug_snapshot_matches!("parse_sum_type", sum_type(asdl));
     }
 
     #[test]
@@ -318,12 +318,12 @@ mod tests {
         let asdl = r#"  // prodType comment line 1
                         // prodType comment line 2
                         prodType = ( type1, type2? name  )"#;
-        assert_debug_snapshot_matches!(prod_type(asdl));
+        assert_debug_snapshot_matches!("parse_prod_type", prod_type(asdl));
     }
 
     #[test]
     fn parse_empty_asdl() {
         let asdl = "";
-        assert_debug_snapshot_matches!(parse(asdl));
+        assert_debug_snapshot_matches!("parse_empty_asdl", parse(asdl));
     }
 }

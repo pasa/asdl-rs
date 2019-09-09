@@ -1,12 +1,20 @@
-use rustc_hash::FxHashMap;
+use std::collections::HashMap;
 use serde::Serialize;
+use asdl;
+use super::Result;
 
 #[derive(Serialize, Debug)]
 pub struct Asdl {
-    pub types: FxHashMap<String, Type>,
+    pub types: HashMap<String, Type>,
     pub prod_types: Vec<String>,
     pub sum_types: Vec<String>,
     pub comments: Vec<String>,
+}
+
+impl Asdl {
+    pub fn parse(asdl: &str) -> Result<Asdl> {
+        Ok(Asdl::new(asdl::Asdl::parse(asdl)?))
+    }
 }
 
 #[derive(Serialize, Debug)]
