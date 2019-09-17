@@ -1,0 +1,14 @@
+cache: cargo
+os: linux
+dist: xenial
+language: rust
+rust: stable
+script :
+  - rustup component add rustfmt
+  - cargo test
+env:
+  - RUSTFLAGS="-D warnings", CARGO_INCREMENTAL=0
+
+branches:
+    only:
+        - master
