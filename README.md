@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/pasa/asdl-rs.svg?branch=master)](https://travis-ci.org/pasa/asdl-rs)
+
 # ASDL parser and CLI for code generation.
 
 ASDL describes the abstract syntax of compiler intermediate representations and other tree-like data structures. Just as the lexical and syntactic structures of programming languages are described with regular expressions and context free grammars, ASDL provides a concise notation for describing the abstract syntax of programming languages. Tools can convert ASDL descriptions into the appropriate data-structure definitions and functions to convert the data-structures to or it easier to build compiler components that interoperate.
