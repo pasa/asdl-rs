@@ -2,7 +2,7 @@
 authors = ["Sergey Parilin <parilinsa@gmail.com>"]
 edition = "2018"
 name = "asdl_tera"
-version = "1.0.0"
+version = "1.0.1"
 description = "CLI application for asdl based code generation using tera template engine"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/pasa/asdl-rs.git"
