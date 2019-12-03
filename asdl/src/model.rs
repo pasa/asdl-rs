@@ -37,9 +37,14 @@ impl Asdl {
     }
 }
 
+use nom::Err;
+
 fn ast(asdl: &str) -> Result<ast::Root> {
-    let (_, root) = parser::parse(asdl).unwrap();
-    Ok(root)
+    parser::parse(asdl).map(|r| r.1).map_err(|e| match e {
+        Err::Incomplete(_) => AsdlError { details: "Incomplete input".into() },
+        Err::Error(e) => AsdlError { details: parser::convert_error(asdl, e) },
+        Err::Failure(_) => AsdlError { details: "Failure".into() },
+    })
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
